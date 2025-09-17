@@ -1,0 +1,7 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Switchboard Configuration",
+  "type": "object",
+  "properties": {},
+  "additionalProperties": true
+}
