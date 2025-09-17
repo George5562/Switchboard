@@ -1,19 +1,25 @@
 {
   "name": "switchboard",
   "version": "0.1.0",
-  "description": "Modular MCP switchboard",
+  "description": "Stdio proxy MCP: one top-level tool per MCP, lazy subtool expansion.",
   "license": "MIT",
   "type": "module",
+  "bin": {
+    "switchboard": "./dist/switchboard"
+  },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
     ".": "./dist/index.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE",
+    "switchboard.config.schema.json"
   ],
   "scripts": {
-    "build": "tsc --project tsconfig.json",
+    "build": "esbuild src/index.ts --bundle --platform=node --format=esm --external:globby --external:fast-glob --external:fs --external:path --external:os --external:child_process --external:util --external:events --external:stream --external:url --outfile=dist/index.js && echo '#!/usr/bin/env node\\nimport(\"./index.js\");' > dist/switchboard && chmod +x dist/switchboard",
     "build:watch": "tsc --project tsconfig.json --watch",
     "dev": "ts-node src/index.ts",
     "lint": "eslint .",
@@ -27,26 +33,26 @@
   },
   "dependencies": {
     "ajv": "^8.17.1",
-    "globby": "^14.0.2",
+    "globby": "^14.1.0",
     "read-pkg-up": "^11.0.0",
-    "zod": "^3.23.8"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
-    "@semantic-release/npm": "^11.0.2",
-    "@types/node": "^22.7.5",
-    "@typescript-eslint/eslint-plugin": "^8.10.0",
-    "@typescript-eslint/parser": "^8.10.0",
-    "@vitest/ui": "^2.1.4",
-    "eslint": "^9.13.0",
-    "esbuild": "^0.24.0",
+    "@semantic-release/npm": "^11.0.3",
+    "@types/node": "^22.18.5",
+    "@typescript-eslint/eslint-plugin": "^8.44.0",
+    "@typescript-eslint/parser": "^8.44.0",
+    "@vitest/ui": "^2.1.9",
+    "esbuild": "^0.24.2",
+    "eslint": "^9.35.0",
     "npm-run-all": "^4.1.5",
-    "prettier": "^3.3.3",
-    "semantic-release": "^24.2.0",
+    "prettier": "^3.6.2",
+    "semantic-release": "^24.2.8",
     "ts-node": "^10.9.2",
-    "typescript": "^5.6.3",
-    "vitest": "^2.1.4"
+    "typescript": "^5.9.2",
+    "vitest": "^2.1.9"
   },
   "engines": {
     "node": ">=18"

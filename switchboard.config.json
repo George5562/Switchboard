@@ -1,0 +1,9 @@
+{
+  "$schema": "./switchboard.config.schema.json",
+  "discoverGlobs": ["examples/**/.mcp.json"],
+  "suites": {
+    "mock": {
+      "description": "Mock child MCP for testing"
+    }
+  }
+}

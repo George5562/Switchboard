@@ -1,7 +1,91 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Switchboard Configuration",
+  "description": "Configuration schema for Switchboard MCP proxy",
   "type": "object",
-  "properties": {},
-  "additionalProperties": true
+  "properties": {
+    "discoverGlobs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": ["mcps/*/.mcp.json"],
+      "description": "Glob patterns to discover child MCP configuration files"
+    },
+    "suites": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "suiteName": {
+            "type": "string",
+            "description": "Custom name for the suite tool (defaults to childName_suite)"
+          },
+          "description": {
+            "type": "string",
+            "description": "Custom description for the suite tool"
+          },
+          "expose": {
+            "type": "object",
+            "properties": {
+              "allow": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Whitelist of allowed subtools (if specified, only these are exposed)"
+              },
+              "deny": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Blacklist of denied subtools"
+              }
+            },
+            "description": "Control which subtools are exposed"
+          },
+          "summaryMaxChars": {
+            "type": "number",
+            "description": "Maximum characters for tool summaries in introspect mode"
+          }
+        }
+      },
+      "description": "Per-child MCP configuration overrides"
+    },
+    "timeouts": {
+      "type": "object",
+      "properties": {
+        "childSpawnMs": {
+          "type": "number",
+          "default": 8000,
+          "description": "Timeout for spawning child MCPs in milliseconds"
+        },
+        "rpcMs": {
+          "type": "number",
+          "default": 60000,
+          "description": "Timeout for RPC calls to child MCPs in milliseconds"
+        }
+      },
+      "description": "Timeout configurations"
+    },
+    "introspection": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["summary", "full", "redacted"],
+          "default": "summary",
+          "description": "Introspection mode for tool descriptions"
+        },
+        "summaryMaxChars": {
+          "type": "number",
+          "default": 160,
+          "description": "Default maximum characters for tool summaries"
+        }
+      },
+      "description": "Introspection settings"
+    }
+  },
+  "additionalProperties": false
 }
