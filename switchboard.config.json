@@ -1,9 +1,13 @@
 {
-  "$schema": "./switchboard.config.schema.json",
-  "discoverGlobs": ["examples/**/.mcp.json"],
-  "suites": {
-    "mock": {
-      "description": "Mock child MCP for testing"
-    }
+  "$schema": "https://unpkg.com/switchboard/switchboard.config.schema.json",
+  "discoverGlobs": [".switchboard/mcps/*/.mcp.json"],
+  "summariesFile": ".switchboard/summaries.txt",
+  "timeouts": {
+    "childSpawnMs": 8000,
+    "rpcMs": 60000
+  },
+  "introspection": {
+    "mode": "summary",
+    "summaryMaxChars": 160
   }
 }

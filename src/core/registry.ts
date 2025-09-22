@@ -5,6 +5,7 @@ import { dirname, resolve } from 'path';
 export interface ChildMeta {
   name: string;
   description?: string;
+  switchboardDescription?: string;
   cwd: string;
   command?: {
     cmd: string;
@@ -36,6 +37,7 @@ export async function discover(globs: string[]): Promise<Record<string, ChildMet
       const meta: ChildMeta = {
         name: config.name,
         description: config.description,
+        switchboardDescription: config.switchboardDescription,
         cwd: dirname(resolve(file)),
         command: config.command
       };

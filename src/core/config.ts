@@ -14,7 +14,7 @@ const SuiteConfigSchema = z.object({
 });
 
 const ConfigSchema = z.object({
-  discoverGlobs: z.array(z.string()).default(["mcps/*/.mcp.json"]),
+  discoverGlobs: z.array(z.string()).default([".switchboard/mcps/*/.mcp.json"]),
   suites: z.record(z.string(), SuiteConfigSchema).default({}),
   timeouts: z.object({
     childSpawnMs: z.number().default(8000),
@@ -35,7 +35,7 @@ const ConfigSchema = z.object({
 export type Config = z.infer<typeof ConfigSchema>;
 
 const defaultConfig: Config = {
-  discoverGlobs: ["mcps/*/.mcp.json"],
+  discoverGlobs: [".switchboard/mcps/*/.mcp.json"],
   suites: {},
   timeouts: { childSpawnMs: 8000, rpcMs: 60000 },
   introspection: { mode: "summary", summaryMaxChars: 160 }
@@ -83,3 +83,4 @@ export async function getConfig(cwd: string = process.cwd()): Promise<Config> {
   cachedConfig = defaultConfig;
   return defaultConfig;
 }
+

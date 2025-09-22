@@ -33,8 +33,11 @@ export async function listTopLevelTools(config: Config): Promise<SuiteTool[]> {
   for (const [childName, meta] of Object.entries(registry)) {
     const suiteConfig = config.suites[childName];
     const suiteName = suiteConfig?.suiteName || `${childName}_suite`;
-    const description = suiteConfig?.description ||
-      `Use this tool for ${meta.description || childName}. Actions: 'introspect' | 'call'`;
+
+    // Use switchboardDescription first, then suite config, then fallback
+    const description = meta.switchboardDescription ||
+                       suiteConfig?.description ||
+                       `Use this tool for ${meta.description || childName}. Actions: 'introspect' | 'call'`;
 
     tools.push({
       name: suiteName,
