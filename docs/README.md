@@ -151,7 +151,8 @@ Each issue includes:
 ## 🎯 Key Takeaways
 
 ### From Protocol Lessons
-- **Not all MCPs use the same stdio framing** - some use Content-Length headers, others use line-delimited JSON
+- **MCP SDK standard is newline-delimited JSON** - use `json + '\n'`, not Content-Length headers
+- **Switchboard receives both formats** - child MCPs send newline-delimited, but Switchboard accepts both for compatibility
 - **Protocol version matters** - use `2024-11-05`, not `0.1.0`
 - **ZodObject vs ZodRawShape is critical** - wrong choice breaks parameter extraction
 - **inputSchema must be included** - hosts can't construct calls without it
@@ -169,7 +170,8 @@ Each issue includes:
 - **Test with mock MCPs** for reliable validation
 
 ### From Best Practices
-- **Always support both stdio protocols** - you don't control what child MCPs use
+- **Send newline-delimited JSON to child MCPs** - this is the MCP SDK standard
+- **Accept multiple stdio formats when receiving** - for maximum compatibility
 - **Clean up resources** - timers, processes, pending promises
 - **Validate configurations** - don't trust user-provided .mcp.json files
 - **Provide actionable errors** - help users debug by including context
@@ -252,5 +254,5 @@ Same as Switchboard: MIT
 
 ---
 
-**Last Updated:** 2025-09-30
+**Last Updated:** 2025-09-30 (Fixed: Stdio framing to use newline-delimited JSON)
 **Version:** 0.1.0 (matches Switchboard release)

@@ -7,35 +7,26 @@ let contentLength = -1;
 
 function sendMessage(msg) {
   const json = JSON.stringify(msg);
-  const header = `Content-Length: ${Buffer.byteLength(json)}\r\n\r\n`;
-  process.stdout.write(header + json);
+  // Use newline-delimited JSON (MCP SDK standard)
+  process.stdout.write(json + '\n');
 }
 
 function processBuffer() {
   while (true) {
-    if (contentLength < 0) {
-      const sep = buffer.indexOf('\r\n\r\n');
-      if (sep < 0) return;
+    // Use newline-delimited JSON (MCP SDK standard)
+    const newlineIdx = buffer.indexOf('\n');
+    if (newlineIdx < 0) return;
 
-      const header = buffer.substring(0, sep);
-      const match = /Content-Length:\s*(\d+)/i.exec(header);
-      if (!match) return;
+    const line = buffer.substring(0, newlineIdx).trim();
+    buffer = buffer.substring(newlineIdx + 1);
 
-      contentLength = parseInt(match[1], 10);
-      buffer = buffer.substring(sep + 4);
-    }
-
-    if (buffer.length < contentLength) return;
-
-    const body = buffer.substring(0, contentLength);
-    buffer = buffer.substring(contentLength);
-    contentLength = -1;
-
-    try {
-      const message = JSON.parse(body);
-      handleMessage(message);
-    } catch (e) {
-      process.stderr.write(`Parse error: ${e}\n`);
+    if (line) {
+      try {
+        const message = JSON.parse(line);
+        handleMessage(message);
+      } catch (e) {
+        process.stderr.write(`Parse error: ${e}\n`);
+      }
     }
   }
 }

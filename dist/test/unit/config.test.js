@@ -15,7 +15,7 @@ describe('getConfig', () => {
         const { getConfig } = await import('../../src/core/config.js');
         const config = await getConfig('/test/dir');
         expect(config).toEqual({
-            discoverGlobs: ['mcps/*/.mcp.json'],
+            discoverGlobs: ['.switchboard/mcps/*/.mcp.json'],
             suites: {},
             timeouts: { childSpawnMs: 8000, rpcMs: 60000 },
             introspection: { mode: 'summary', summaryMaxChars: 160 }

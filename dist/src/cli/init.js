@@ -1,73 +1,50 @@
 import { mkdir, writeFile, existsSync, readFile, copyFile, rm } from 'fs';
-import { join } from 'path';
+import { join, dirname } from 'path';
 import { promisify } from 'util';
+import { fileURLToPath } from 'url';
 const mkdirAsync = promisify(mkdir);
 const writeFileAsync = promisify(writeFile);
 const readFileAsync = promisify(readFile);
 const copyFileAsync = promisify(copyFile);
 const rmAsync = promisify(rm);
-function getStandardDescriptions() {
-    // Embedded standard descriptions - this ensures they're always available
-    // regardless of package installation method or bundling
-    return {
+async function getStandardDescriptions() {
+    // Try to load from mcp-descriptions.json file
+    // This file should be in the package root after npm install
+    const fallbackDescriptions = {
         "memory": "Persistent memory storage for conversations and data across sessions",
         "context7": "Smart context management and retrieval for enhanced LLM interactions",
         "supabase": "Database operations and queries for Supabase projects",
         "filesystem": "File system operations for reading, writing, and managing files",
         "playwright": "Browser automation for web testing, scraping, and interaction",
-        "brave-search": "Web search capabilities using Brave Search API",
-        "sqlite": "SQLite database operations and queries",
-        "postgres": "PostgreSQL database operations and queries",
-        "github": "GitHub repository operations and API interactions",
-        "slack": "Slack workspace integration and messaging",
-        "gmail": "Gmail email management and operations",
-        "google-drive": "Google Drive file storage and management",
-        "aws": "AWS cloud services and resource management",
-        "docker": "Docker container management and operations",
-        "kubernetes": "Kubernetes cluster and resource management",
-        "redis": "Redis key-value store operations",
-        "mongodb": "MongoDB database operations and queries",
-        "notion": "Notion workspace and content management",
-        "jira": "Jira project management and issue tracking",
-        "confluence": "Confluence documentation and wiki management",
-        "linear": "Linear issue tracking and project management",
-        "anthropic": "Anthropic API integration and Claude interactions",
-        "openai": "OpenAI API integration and GPT interactions",
-        "google-ai": "Google AI and Gemini API integration",
-        "huggingface": "Hugging Face model hub and inference",
-        "langchain": "LangChain framework integration and tools",
-        "pinecone": "Pinecone vector database operations",
-        "weaviate": "Weaviate vector database and semantic search",
-        "chromadb": "ChromaDB vector database operations",
-        "elasticsearch": "Elasticsearch search and analytics operations",
-        "stripe": "Stripe payment processing and billing",
-        "twilio": "Twilio communication and messaging services",
-        "sendgrid": "SendGrid email delivery and management",
-        "calendar": "Calendar management and scheduling operations",
-        "todoist": "Todoist task management and productivity",
-        "trello": "Trello board and card management",
-        "asana": "Asana project and task management",
-        "discord": "Discord server and messaging integration",
-        "telegram": "Telegram bot and messaging integration",
-        "twitter": "Twitter/X social media integration",
-        "youtube": "YouTube video and channel management",
-        "spotify": "Spotify music and playlist management",
-        "weather": "Weather data and forecasting services",
-        "news": "News aggregation and article retrieval",
-        "translation": "Language translation and localization services",
-        "pdf": "PDF document processing and manipulation",
-        "image": "Image processing, editing, and analysis",
-        "video": "Video processing and manipulation tools",
-        "audio": "Audio processing and manipulation tools",
-        "ssh": "SSH remote server access and management",
-        "ftp": "FTP file transfer and management",
-        "git": "Git version control operations",
-        "npm": "NPM package management and operations",
-        "pip": "Python package management with pip",
-        "cargo": "Rust package management with Cargo",
-        "maven": "Maven Java project management",
-        "gradle": "Gradle build automation and management"
     };
+    try {
+        // Get the path to this module
+        const currentFile = fileURLToPath(import.meta.url);
+        const currentDir = dirname(currentFile);
+        // Try multiple paths to find mcp-descriptions.json
+        const possiblePaths = [
+            // Development: src/cli/../.. -> project root
+            join(currentDir, '..', '..', 'mcp-descriptions.json'),
+            // Built: dist/src/cli/../.. -> project root
+            join(currentDir, '..', '..', '..', 'mcp-descriptions.json'),
+            // Global install: node_modules/switchboard/
+            join(currentDir, '..', 'mcp-descriptions.json'),
+        ];
+        for (const path of possiblePaths) {
+            if (existsSync(path)) {
+                const content = await readFileAsync(path, 'utf8');
+                const parsed = JSON.parse(content);
+                // Extract descriptions from the properties object
+                return parsed.properties || parsed;
+            }
+        }
+        console.warn('Warning: mcp-descriptions.json not found, using minimal fallback descriptions');
+        return fallbackDescriptions;
+    }
+    catch (error) {
+        console.warn('Warning: Failed to load mcp-descriptions.json, using fallback descriptions:', error);
+        return fallbackDescriptions;
+    }
 }
 const TEMPLATE_MCP_JSON = `{
   "name": "example-mcp",
@@ -105,12 +82,46 @@ async function discoverExistingMcp(cwd) {
         return null;
     }
 }
+function findMatchingDescription(mcpName, standardDescs) {
+    // Try exact match first
+    if (standardDescs[mcpName]) {
+        return standardDescs[mcpName];
+    }
+    // Try case-insensitive exact match
+    const lowerMcpName = mcpName.toLowerCase();
+    for (const [key, value] of Object.entries(standardDescs)) {
+        if (key.toLowerCase() === lowerMcpName) {
+            return value;
+        }
+    }
+    // Try with " MCP" suffix
+    for (const [key, value] of Object.entries(standardDescs)) {
+        if (key.toLowerCase() === `${lowerMcpName} mcp`) {
+            return value;
+        }
+    }
+    // Try removing common prefixes/suffixes
+    const cleanedName = mcpName
+        .replace(/^mcp[-_]?/i, '')
+        .replace(/[-_]?mcp$/i, '')
+        .toLowerCase();
+    for (const [key, value] of Object.entries(standardDescs)) {
+        const cleanedKey = key
+            .replace(/^mcp[-_]?/i, '')
+            .replace(/[-_]?mcp$/i, '')
+            .toLowerCase();
+        if (cleanedKey === cleanedName) {
+            return value;
+        }
+    }
+    return null;
+}
 async function copyExistingMcps(existingConfig, switchboardDir) {
     const mcpsDir = join(switchboardDir, 'mcps');
     const copiedMcps = [];
     const standardDescriptions = [];
     // Get standard descriptions
-    const standardDescs = getStandardDescriptions();
+    const standardDescs = await getStandardDescriptions();
     // Support both "mcps" and "mcpServers" keys
     const mcpsSection = existingConfig?.mcps || existingConfig?.mcpServers;
     if (!mcpsSection) {
@@ -129,7 +140,7 @@ async function copyExistingMcps(existingConfig, switchboardDir) {
             ...((mcpConfig.env) && { env: mcpConfig.env })
         };
         // Use standard description if available, otherwise use placeholder
-        const standardDesc = standardDescs[mcpName];
+        const standardDesc = findMatchingDescription(mcpName, standardDescs);
         const switchboardDescription = standardDesc || `describe what ${mcpName} does in one line for the LLM`;
         if (standardDesc) {
             standardDescriptions.push(mcpName);

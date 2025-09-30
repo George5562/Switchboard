@@ -14049,10 +14049,15 @@ var ChildClient = class {
       this.process = void 0;
       this.initialized = false;
     });
-    this.process.stdout?.on("data", (chunk) => {
-      this.buffer = Buffer.concat([this.buffer, chunk]);
-      this.processBuffer();
-    });
+    if (this.process.stdout) {
+      this.process.stdout.setEncoding("utf8");
+      this.process.stdout.on("data", (chunk) => {
+        const chunkStr = typeof chunk === "string" ? chunk : chunk.toString("utf8");
+        const chunkBuf = Buffer.from(chunkStr, "utf8");
+        this.buffer = Buffer.concat([this.buffer, chunkBuf]);
+        this.processBuffer();
+      });
+    }
     this.process.on("error", (err) => {
       const error = new Error(`Child MCP ${this.meta.name} error: ${err.message}`);
       for (const pending of this.pending.values()) {
@@ -14141,7 +14146,7 @@ var ChildClient = class {
         reject(new Error(`RPC timeout for ${method}`));
       }, this.rpcTimeoutMs);
       this.pending.set(id, { resolve: resolve2, reject, timer });
-      this.process.stdin.write(header + buffer.toString("utf8"));
+      this.process.stdin.write(json + "\n");
     });
   }
   async initialize() {
@@ -14314,73 +14319,46 @@ function closeAllClients() {
 
 // src/cli/init.ts
 import { mkdir, writeFile, existsSync as existsSync2, readFile, copyFile, rm } from "fs";
-import { join as join2 } from "path";
+import { join as join2, dirname as dirname2 } from "path";
 import { promisify } from "util";
+import { fileURLToPath } from "url";
 var mkdirAsync = promisify(mkdir);
 var writeFileAsync = promisify(writeFile);
 var readFileAsync = promisify(readFile);
 var copyFileAsync = promisify(copyFile);
 var rmAsync = promisify(rm);
-function getStandardDescriptions() {
-  return {
+async function getStandardDescriptions() {
+  const fallbackDescriptions = {
     "memory": "Persistent memory storage for conversations and data across sessions",
     "context7": "Smart context management and retrieval for enhanced LLM interactions",
     "supabase": "Database operations and queries for Supabase projects",
     "filesystem": "File system operations for reading, writing, and managing files",
-    "playwright": "Browser automation for web testing, scraping, and interaction",
-    "brave-search": "Web search capabilities using Brave Search API",
-    "sqlite": "SQLite database operations and queries",
-    "postgres": "PostgreSQL database operations and queries",
-    "github": "GitHub repository operations and API interactions",
-    "slack": "Slack workspace integration and messaging",
-    "gmail": "Gmail email management and operations",
-    "google-drive": "Google Drive file storage and management",
-    "aws": "AWS cloud services and resource management",
-    "docker": "Docker container management and operations",
-    "kubernetes": "Kubernetes cluster and resource management",
-    "redis": "Redis key-value store operations",
-    "mongodb": "MongoDB database operations and queries",
-    "notion": "Notion workspace and content management",
-    "jira": "Jira project management and issue tracking",
-    "confluence": "Confluence documentation and wiki management",
-    "linear": "Linear issue tracking and project management",
-    "anthropic": "Anthropic API integration and Claude interactions",
-    "openai": "OpenAI API integration and GPT interactions",
-    "google-ai": "Google AI and Gemini API integration",
-    "huggingface": "Hugging Face model hub and inference",
-    "langchain": "LangChain framework integration and tools",
-    "pinecone": "Pinecone vector database operations",
-    "weaviate": "Weaviate vector database and semantic search",
-    "chromadb": "ChromaDB vector database operations",
-    "elasticsearch": "Elasticsearch search and analytics operations",
-    "stripe": "Stripe payment processing and billing",
-    "twilio": "Twilio communication and messaging services",
-    "sendgrid": "SendGrid email delivery and management",
-    "calendar": "Calendar management and scheduling operations",
-    "todoist": "Todoist task management and productivity",
-    "trello": "Trello board and card management",
-    "asana": "Asana project and task management",
-    "discord": "Discord server and messaging integration",
-    "telegram": "Telegram bot and messaging integration",
-    "twitter": "Twitter/X social media integration",
-    "youtube": "YouTube video and channel management",
-    "spotify": "Spotify music and playlist management",
-    "weather": "Weather data and forecasting services",
-    "news": "News aggregation and article retrieval",
-    "translation": "Language translation and localization services",
-    "pdf": "PDF document processing and manipulation",
-    "image": "Image processing, editing, and analysis",
-    "video": "Video processing and manipulation tools",
-    "audio": "Audio processing and manipulation tools",
-    "ssh": "SSH remote server access and management",
-    "ftp": "FTP file transfer and management",
-    "git": "Git version control operations",
-    "npm": "NPM package management and operations",
-    "pip": "Python package management with pip",
-    "cargo": "Rust package management with Cargo",
-    "maven": "Maven Java project management",
-    "gradle": "Gradle build automation and management"
+    "playwright": "Browser automation for web testing, scraping, and interaction"
   };
+  try {
+    const currentFile = fileURLToPath(import.meta.url);
+    const currentDir = dirname2(currentFile);
+    const possiblePaths = [
+      // Development: src/cli/../.. -> project root
+      join2(currentDir, "..", "..", "mcp-descriptions.json"),
+      // Built: dist/src/cli/../.. -> project root
+      join2(currentDir, "..", "..", "..", "mcp-descriptions.json"),
+      // Global install: node_modules/switchboard/
+      join2(currentDir, "..", "mcp-descriptions.json")
+    ];
+    for (const path of possiblePaths) {
+      if (existsSync2(path)) {
+        const content = await readFileAsync(path, "utf8");
+        const parsed = JSON.parse(content);
+        return parsed.properties || parsed;
+      }
+    }
+    console.warn("Warning: mcp-descriptions.json not found, using minimal fallback descriptions");
+    return fallbackDescriptions;
+  } catch (error) {
+    console.warn("Warning: Failed to load mcp-descriptions.json, using fallback descriptions:", error);
+    return fallbackDescriptions;
+  }
 }
 var TEMPLATE_MCP_JSON = `{
   "name": "example-mcp",
@@ -14416,11 +14394,35 @@ async function discoverExistingMcp(cwd) {
     return null;
   }
 }
+function findMatchingDescription(mcpName, standardDescs) {
+  if (standardDescs[mcpName]) {
+    return standardDescs[mcpName];
+  }
+  const lowerMcpName = mcpName.toLowerCase();
+  for (const [key, value] of Object.entries(standardDescs)) {
+    if (key.toLowerCase() === lowerMcpName) {
+      return value;
+    }
+  }
+  for (const [key, value] of Object.entries(standardDescs)) {
+    if (key.toLowerCase() === `${lowerMcpName} mcp`) {
+      return value;
+    }
+  }
+  const cleanedName = mcpName.replace(/^mcp[-_]?/i, "").replace(/[-_]?mcp$/i, "").toLowerCase();
+  for (const [key, value] of Object.entries(standardDescs)) {
+    const cleanedKey = key.replace(/^mcp[-_]?/i, "").replace(/[-_]?mcp$/i, "").toLowerCase();
+    if (cleanedKey === cleanedName) {
+      return value;
+    }
+  }
+  return null;
+}
 async function copyExistingMcps(existingConfig, switchboardDir) {
   const mcpsDir = join2(switchboardDir, "mcps");
   const copiedMcps = [];
   const standardDescriptions = [];
-  const standardDescs = getStandardDescriptions();
+  const standardDescs = await getStandardDescriptions();
   const mcpsSection = existingConfig?.mcps || existingConfig?.mcpServers;
   if (!mcpsSection) {
     return { copiedMcps, standardDescriptions };
@@ -14434,7 +14436,7 @@ async function copyExistingMcps(existingConfig, switchboardDir) {
       args: mcpConfig.args || [],
       ...mcpConfig.env && { env: mcpConfig.env }
     };
-    const standardDesc = standardDescs[mcpName];
+    const standardDesc = findMatchingDescription(mcpName, standardDescs);
     const switchboardDescription = standardDesc || `describe what ${mcpName} does in one line for the LLM`;
     if (standardDesc) {
       standardDescriptions.push(mcpName);

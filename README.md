@@ -16,18 +16,19 @@ Switchboard is a **proxy MCP (Model Context Protocol) implementation** that solv
 
 ```
 ❌ Without Switchboard:
-Host sees: playwright_click, playwright_type, playwright_navigate, playwright_screenshot...
-Result: 20+ tools × 200 tokens each = 4000+ tokens just for tool descriptions
+Host sees: memory_create_entities, memory_create_relations, memory_add_observations...
+Result: 9 tools × ~630 tokens each = 5,913 tokens just for tool descriptions
+(Supabase and other large MCPs can reach 20,000+ tokens!)
 ```
 
 ### The Solution
 
 ```
 ✅ With Switchboard:
-Host sees: playwright_suite
+Host sees: memory_suite
 On demand: { action: "introspect" } → shows available subtools
-On use: { action: "call", subtool: "click", args: {...} } → executes
-Result: 1 tool × 50 tokens = 50 tokens (85-90% savings!)
+On use: { action: "call", subtool: "create_entities", args: {...} } → executes
+Result: 1 tool × 634 tokens = 634 tokens (89% savings!)
 ```
 
 ## How It Works
@@ -214,7 +215,10 @@ Each suite tool accepts these parameters:
 - **Startup**: ~1000ms (includes child discovery)
 - **Tool Listing**: ~immediate (cached)
 - **Child Operations**: ~2000ms (spawn + RPC)
-- **Token Reduction**: 85-90% (1,820+ → 200-300 tokens)
+- **Token Reduction**:
+  - Memory MCP: 89% (5,913 → 634 tokens)
+  - Typical aggregate: 85-90% (1,820+ → 200-300 tokens)
+  - Large MCPs like Supabase: Can save 19,000+ tokens (20k+ → ~1k)
 - **Memory**: Minimal overhead, efficient child process management
 
 ## Examples
@@ -445,7 +449,11 @@ MIT © [Your Name]
 
 ## Why Switchboard?
 
-**Token Efficiency**: 85-90% reduction in MCP tool descriptions (1,820+ → 200-300 tokens)
+**Token Efficiency**: 85-90% reduction in MCP tool descriptions
+  - Memory MCP: 5,913 → 634 tokens (89% savings)
+  - Large MCPs like Supabase: 20,000+ → ~1,000 tokens (95%+ savings)
+  - Typical aggregate: 1,820+ → 200-300 tokens
+
 **Clean Abstraction**: Host sees simple suite tools, not overwhelming tool lists
 **Lazy Loading**: Child MCPs only spawn when needed
 **Production Ready**: Comprehensive testing and error handling with real-world validation

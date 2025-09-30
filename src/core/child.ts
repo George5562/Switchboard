@@ -49,10 +49,17 @@ export class ChildClient {
       this.initialized = false;
     });
 
-    this.process.stdout?.on('data', (chunk) => {
-      this.buffer = Buffer.concat([this.buffer, chunk]);
-      this.processBuffer();
-    });
+    if (this.process.stdout) {
+      // Set encoding to UTF-8 for proper string handling
+      this.process.stdout.setEncoding('utf8');
+
+      this.process.stdout.on('data', (chunk) => {
+        const chunkStr = typeof chunk === 'string' ? chunk : chunk.toString('utf8');
+        const chunkBuf = Buffer.from(chunkStr, 'utf8');
+        this.buffer = Buffer.concat([this.buffer, chunkBuf]);
+        this.processBuffer();
+      });
+    }
 
     this.process.on('error', (err) => {
       const error = new Error(`Child MCP ${this.meta.name} error: ${err.message}`);
@@ -165,8 +172,8 @@ export class ChildClient {
 
       this.pending.set(id, { resolve, reject, timer });
 
-      // Write header and body together
-      this.process!.stdin!.write(header + buffer.toString('utf8'));
+      // Write as newline-delimited JSON (MCP SDK standard)
+      this.process!.stdin!.write(json + '\n');
     });
   }
 

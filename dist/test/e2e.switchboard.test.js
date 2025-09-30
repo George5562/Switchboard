@@ -3,8 +3,6 @@ import { spawn } from 'child_process';
 import * as path from 'path';
 describe('Switchboard E2E', () => {
     let switchboard;
-    let buffer = Buffer.alloc(0);
-    let contentLength = -1;
     const messages = [];
     function sendMessage(method, params) {
         return new Promise((resolve) => {
@@ -16,9 +14,8 @@ describe('Switchboard E2E', () => {
                 params
             };
             const json = JSON.stringify(message);
-            const buf = Buffer.from(json, 'utf8');
-            switchboard.stdin.write(`Content-Length: ${buf.length}\r\n\r\n`);
-            switchboard.stdin.write(buf);
+            // Use newline-delimited JSON (MCP SDK standard)
+            switchboard.stdin.write(json + '\n');
             // Wait for response with matching id
             const checkResponse = setInterval(() => {
                 const response = messages.find(m => m.id === id);
@@ -41,32 +38,20 @@ describe('Switchboard E2E', () => {
             stdio: ['pipe', 'pipe', 'inherit'],
             env: { ...process.env, NODE_ENV: 'test' }
         });
-        // Process stdout
+        // Process stdout (newline-delimited JSON)
+        switchboard.stdout.setEncoding('utf8');
         switchboard.stdout.on('data', (chunk) => {
-            buffer = Buffer.concat([buffer, chunk]);
-            while (true) {
-                if (contentLength < 0) {
-                    const sep = buffer.indexOf('\r\n\r\n');
-                    if (sep < 0)
-                        break;
-                    const header = buffer.subarray(0, sep).toString('utf8');
-                    const match = /Content-Length:\s*(\d+)/i.exec(header);
-                    if (!match)
-                        break;
-                    contentLength = parseInt(match[1], 10);
-                    buffer = buffer.subarray(sep + 4);
-                }
-                if (buffer.length < contentLength)
-                    break;
-                const body = buffer.subarray(0, contentLength);
-                buffer = buffer.subarray(contentLength);
-                contentLength = -1;
-                try {
-                    const message = JSON.parse(body.toString('utf8'));
-                    messages.push(message);
-                }
-                catch (error) {
-                    console.error('Failed to parse message:', error);
+            const lines = chunk.split('\n');
+            for (const line of lines) {
+                const trimmed = line.trim();
+                if (trimmed) {
+                    try {
+                        const message = JSON.parse(trimmed);
+                        messages.push(message);
+                    }
+                    catch (error) {
+                        // Skip non-JSON lines
+                    }
                 }
             }
         });
@@ -80,8 +65,12 @@ describe('Switchboard E2E', () => {
     });
     it('responds to initialize', async () => {
         const response = await sendMessage('initialize', {
-            protocolVersion: '0.1.0',
-            capabilities: {}
+            protocolVersion: '2024-11-05',
+            capabilities: {},
+            clientInfo: {
+                name: 'test-client',
+                version: '1.0.0'
+            }
         });
         expect(response).toBeTruthy();
         expect(response.result).toBeTruthy();
@@ -110,10 +99,14 @@ describe('Switchboard E2E', () => {
                 }
             });
             expect(response).toBeTruthy();
-            expect(response.result?.tools).toBeDefined();
-            expect(Array.isArray(response.result.tools)).toBe(true);
+            expect(response.result?.content).toBeDefined();
+            expect(Array.isArray(response.result.content)).toBe(true);
+            // Parse the JSON result from content
+            const result = JSON.parse(response.result.content[0].text);
+            expect(result.tools).toBeDefined();
+            expect(Array.isArray(result.tools)).toBe(true);
             // Each tool should have name and summary
-            response.result.tools.forEach((tool) => {
+            result.tools.forEach((tool) => {
                 expect(tool.name).toBeDefined();
                 expect(tool.summary).toBeDefined();
             });
@@ -128,18 +121,16 @@ describe('Switchboard E2E', () => {
                 name: 'mock_suite',
                 arguments: {
                     action: 'call',
-                    subtool: 'click',
-                    args: { selector: '#test-button' }
+                    subtool: 'echo',
+                    args: { message: 'test message' }
                 }
             });
             expect(response).toBeTruthy();
-            // Mock child echoes back the call
-            if (!response.error) {
-                expect(response.result).toBeDefined();
-                expect(response.result.ok).toBe(true);
-                expect(response.result.name).toBe('click');
-                expect(response.result.args?.selector).toBe('#test-button');
-            }
+            expect(response.result?.content).toBeDefined();
+            // Parse the JSON result from content
+            const result = JSON.parse(response.result.content[0].text);
+            expect(result.content).toBeDefined();
+            expect(result.content[0].text).toContain('Echo: test message');
         }
     });
     it('returns error for unknown method', async () => {
