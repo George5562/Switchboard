@@ -10,6 +10,7 @@ export interface ChildMeta {
   command?: {
     cmd: string;
     args?: string[];
+    env?: Record<string, string>;
   };
   cache?: any;
 }
@@ -30,7 +31,7 @@ export async function discover(globs: string[]): Promise<Record<string, ChildMet
       const config = JSON.parse(content);
 
       if (!config.name || typeof config.name !== 'string') {
-        console.warn(`Skipping ${file}: missing or invalid 'name' field`);
+        process.stderr.write(`Skipping ${file}: missing or invalid 'name' field\n`);
         continue;
       }
 
@@ -44,7 +45,7 @@ export async function discover(globs: string[]): Promise<Record<string, ChildMet
 
       registry[config.name] = meta;
     } catch (error: any) {
-      console.warn(`Failed to parse ${file}: ${error.message}`);
+      process.stderr.write(`Failed to parse ${file}: ${error.message}\n`);
     }
   }
 

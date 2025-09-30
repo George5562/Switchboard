@@ -134,24 +134,125 @@ If you, the LLM assistant, have restarted and can **attach to MCPs directly**, y
      { "action": "introspect" }
      ```
 
-     → expect a list of child subtools with `summary` fields.
+     → expect a list of child subtools with `summary` fields **and `inputSchema`**.
    * Call `tools/call` with:
 
      ```json
      { "action": "call", "subtool": "click", "args": { "selector": "#btn" } }
      ```
 
-     → expect the child MCP’s response (mock child will echo).
+     → expect the child MCP's response (mock child will echo).
 
 3. **Verify token savings**:
 
-   * Compare host’s token usage when using Switchboard (one short description per suite) versus raw child MCP (20+ long descriptions).
+   * Compare host's token usage when using Switchboard (one short description per suite) versus raw child MCP (20+ long descriptions).
    * You should see a significant reduction.
 
 4. **Try variations**:
 
    * Add a `switchboard.config.json` that sets `expose.allow` to only a few subtools.
    * Run `introspect` again → confirm only allowed subtools appear.
+
+---
+
+## Testing After Code Changes (CRITICAL for LLM Assistants)
+
+### The Stale MCP Problem
+
+**IMPORTANT**: When you make code changes to Switchboard, the MCP host (Claude Code, etc.) caches the running instance. Your changes **will not take effect** until the host restarts, even after rebuilding.
+
+**Symptoms:**
+- You rebuild with `npm run build`
+- Try to test via your direct MCP access (e.g., calling `mcp__switchboard__context7_suite`)
+- Old behavior persists
+- Debug logs show old code is still running
+
+### Solution: Use Fresh Sub-Agents for Testing
+
+**Why this works:** Sub-agents spawn fresh MCP connections. They don't inherit your stale cached connection.
+
+**Workflow:**
+
+1. **Make code changes** (e.g., fix a bug, add a feature)
+
+2. **Rebuild:**
+   ```bash
+   npm run build
+   ```
+
+3. **Launch a sub-agent to test:**
+   ```markdown
+   Use the Task tool with subagent_type: "general-purpose"
+
+   Prompt: "Test the Switchboard MCP after recent changes to verify [what you changed].
+
+   Background: I just rebuilt Switchboard at /Users/georgestephens/Documents/GitHub/Switchboard
+   after [describe changes]. The main session has a stale MCP connection, but you have fresh access.
+
+   Your task:
+   1. Run /mcp list to confirm switchboard is available
+   2. Test [specific functionality]
+   3. Verify [expected behavior]
+   4. Report if the fix is working
+
+   Return detailed results including any error messages."
+   ```
+
+4. **Analyze sub-agent results** to determine if changes worked
+
+5. **Iterate if needed** - make more changes, rebuild, test with new sub-agent
+
+**Example Test Script for Sub-Agent:**
+
+```typescript
+#!/usr/bin/env node
+
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+
+async function testSwitchboard() {
+  const client = new Client({ name: 'test', version: '1.0.0' }, {});
+  const transport = new StdioClientTransport({
+    command: './dist/switchboard',
+    args: [],
+    stderr: 'inherit'
+  });
+
+  await client.connect(transport);
+
+  // Test specific functionality
+  const tools = (await client.listTools()).tools;
+  const introspect = await client.callTool({
+    name: tools[0].name,
+    arguments: { action: 'introspect' }
+  });
+
+  console.log('Introspect result:', JSON.stringify(introspect, null, 2));
+  await client.close();
+}
+
+testSwitchboard().catch(console.error);
+```
+
+**Key Insights:**
+
+- **Parallel agents work**: Launch multiple sub-agents to test different MCPs simultaneously
+- **Fresh connections**: Each sub-agent gets a clean MCP runtime with your latest code
+- **No host restart needed**: Main session stays active, only test via sub-agents
+- **Document findings**: Have sub-agents report detailed results back to you
+
+### Testing Checklist for Code Changes
+
+When you modify Switchboard code:
+
+- [ ] Make changes to source files
+- [ ] Run `npm run build`
+- [ ] Launch sub-agent with Task tool
+- [ ] Sub-agent tests via `/mcp` or standalone script
+- [ ] Sub-agent reports: ✅ working or ❌ issues found
+- [ ] If issues: iterate (fix, rebuild, test again)
+- [ ] Once working: document what was fixed
+- [ ] Update relevant docs if behavior changed
 
 ---
 

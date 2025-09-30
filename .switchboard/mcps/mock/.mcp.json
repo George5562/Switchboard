@@ -1,0 +1,11 @@
+{
+  "name": "mock",
+  "description": "Mock MCP for testing",
+  "switchboardDescription": "Mock MCP tool for testing Switchboard functionality",
+  "command": {
+    "cmd": "node",
+    "args": [
+      "/Users/georgestephens/Documents/GitHub/Switchboard/.switchboard/mcps/mock/mock-server.js"
+    ]
+  }
+}

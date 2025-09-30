@@ -91,8 +91,8 @@ function generateTopLevelMcpTemplate(existingConfig: any): string {
   return `{
   "${configKey}": {
     "switchboard": {
-      "command": "switchboard",
-      "args": [],
+      "command": "npx",
+      "args": ["switchboard"],
       "env": {}
     }
   }

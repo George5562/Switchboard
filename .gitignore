@@ -1,8 +1,16 @@
 node_modules/
-dist/
+
 coverage/
 .vscode/
 .idea/
 .DS_Store
 npm-debug.log*
 package-lock.json
+
+# Test artifacts
+test_*.js
+test_*.log
+debug.log
+stderr.log
+verify-inputschema.js
+test-spawn.js

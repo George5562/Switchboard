@@ -188,7 +188,7 @@ Each suite tool accepts these parameters:
 ✅ **Comprehensive testing confirms production readiness:**
 
 ### Core Functionality
-- **Protocol Compliance**: Perfect JSON-RPC 2.0 and MCP implementation
+- **Protocol Compliance**: Built on the official `@modelcontextprotocol/sdk` for guaranteed protocol compliance.
 - **Token Optimization**: 85-90% reduction demonstrated (14 tools → 2 suites)
 - **Child Discovery**: Successfully finds and manages child MCPs
 - **Error Handling**: Graceful failure modes and clear error messages
@@ -280,8 +280,7 @@ const result = await mcp.callTool("playwright_suite", {
 ### Project Structure
 ```
 src/
-├── index.ts              # stdio entrypoint; routes JSON-RPC methods
-├── rpc/stdio.ts          # Content-Length framing + send/receive
+├── index.ts              # Main entrypoint; discovers and registers tools with the MCP SDK.
 ├── core/config.ts        # load/validate user config
 ├── core/registry.ts      # discover child MCPs; cache metadata
 ├── core/child.ts         # spawn child MCP; JSON-RPC client
@@ -304,6 +303,62 @@ npm run format       # Prettier
 npm run build
 # Creates: dist/index.js (bundled) + dist/switchboard (executable)
 ```
+
+### Development Notes
+**⚠️ Important**: The current `.mcp.json` uses an absolute path for local development with `npm link`. Before deploying or publishing examples, update the configuration to use:
+```json
+{
+  "mcpServers": {
+    "switchboard": {
+      "command": "npx",
+      "args": ["switchboard"],
+      "env": {}
+    }
+  }
+}
+```
+
+### Testing Code Changes
+
+**Important for Development:** MCP hosts (Claude Code, etc.) cache running instances. After rebuilding, changes won't take effect until the host restarts.
+
+**Quick Test Without Restart:**
+```bash
+# After making changes
+npm run build
+
+# Test with SDK client (spawns fresh process)
+node test-standalone.js
+```
+
+**Example standalone test:**
+```typescript
+#!/usr/bin/env node
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+
+const client = new Client({ name: 'test', version: '1.0.0' }, {});
+const transport = new StdioClientTransport({
+  command: './dist/switchboard',
+  args: [],
+  stderr: 'inherit'
+});
+
+await client.connect(transport);
+const tools = (await client.listTools()).tools;
+console.log('Tools:', tools.map(t => t.name).join(', '));
+
+const introspect = await client.callTool({
+  name: tools[0].name,
+  arguments: { action: 'introspect' }
+});
+console.log('Introspect:', introspect);
+await client.close();
+```
+
+**See `docs/mcp-best-practices.md` Section 11** for complete standalone testing patterns.
+
+---
 
 ## Status: 🟢 Production Ready
 
@@ -351,8 +406,10 @@ Planned improvements for upcoming releases:
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature-name`
 3. Make changes and add tests
-4. Ensure all tests pass: `npm test`
-5. Submit a pull request
+4. **Test standalone** (see Testing Code Changes above)
+5. Ensure all tests pass: `npm test`
+6. Update documentation if behavior changes
+7. Submit a pull request
 
 ### Commit Style
 Use [Conventional Commits](https://conventionalcommits.org/):
@@ -360,6 +417,25 @@ Use [Conventional Commits](https://conventionalcommits.org/):
 - `fix:` bug fixes
 - `docs:` documentation changes
 - `test:` test additions/changes
+
+### Development Resources
+
+**Comprehensive Documentation:**
+- **[Architecture](./docs/architecture.md)** - System design and data flow
+- **[Protocol Lessons](./docs/mcp-protocol-lessons.md)** - Insights from development
+- **[Troubleshooting](./docs/troubleshooting-guide.md)** - Solutions to common issues
+- **[Best Practices](./docs/mcp-best-practices.md)** - Guidelines for MCP development
+
+**Testing:**
+- Run `npm test` for full test suite
+- Use standalone testing for rapid iteration (see above)
+- See `docs/troubleshooting-guide.md` for debugging workflows
+
+**Key Fixes Implemented:**
+- ✅ Dual stdio protocol support (Content-Length + line-delimited)
+- ✅ inputSchema included in introspect responses
+- ✅ Protocol version updated to 2024-11-05
+- ✅ Environment variable passing to child MCPs
 
 ## License
 
@@ -373,6 +449,6 @@ MIT © [Your Name]
 **Clean Abstraction**: Host sees simple suite tools, not overwhelming tool lists
 **Lazy Loading**: Child MCPs only spawn when needed
 **Production Ready**: Comprehensive testing and error handling with real-world validation
-**Standards Compliant**: Perfect JSON-RPC 2.0 and MCP protocol implementation
+**Standards Compliant**: Built on the official `@modelcontextprotocol/sdk` for guaranteed standards compliance.
 
 *Switchboard transforms MCP from a "tool flooding" problem into a clean, token-efficient aggregation layer.* 🎯

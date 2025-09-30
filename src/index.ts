@@ -1,53 +1,64 @@
 #!/usr/bin/env node
 
-import { startStdioRpc } from './rpc/stdio.js';
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { z } from "zod";
+
 import { getConfig } from './core/config.js';
 import { listTopLevelTools, handleSuiteCall, closeAllClients } from './core/router.js';
 import { initSwitchboard } from './cli/init.js';
 
 async function main() {
-  // Handle CLI commands
+  // Handle CLI commands like `switchboard init`
   const args = process.argv.slice(2);
   if (args[0] === 'init') {
     await initSwitchboard(process.cwd());
     process.exit(0);
   }
 
-  // Default behavior: start MCP server
+  // Get switchboard configuration
   const config = await getConfig(process.cwd());
-  const { write } = startStdioRpc(async (msg) => {
-    const { id, method, params } = msg;
-    const ok = (result: any) => write({ jsonrpc: '2.0', id, result });
-    const err = (message: string, code = -32000) => write({ jsonrpc: '2.0', id, error: { code, message } });
 
-    try {
-      if (method === 'initialize') {
-        return ok({
-          protocolVersion: '0.1.0',
-          serverInfo: {
-            name: 'switchboard',
-            version: '0.1.0'
-          },
-          capabilities: {}
-        });
-      }
-
-      if (method === 'tools/list') {
-        const tools = await listTopLevelTools(config);
-        return ok({ tools });
-      }
-
-      if (method === 'tools/call') {
-        const { name, arguments: args } = params ?? {};
-        const result = await handleSuiteCall(name, args ?? {}, config);
-        return ok(result);
-      }
-
-      return err(`Method not found: ${method}`, -32601);
-    } catch (e: any) {
-      return err(e?.message ?? String(e));
-    }
+  // Create a new MCP Server instance using the SDK
+  const server = new McpServer({
+    name: "switchboard",
+    version: "0.1.0", // This could be dynamically loaded from package.json
+    capabilities: {
+      tools: {},
+    },
   });
+
+  // Discover and register tools dynamically
+  const tools = await listTopLevelTools(config);
+  for (const tool of tools) {
+    // Define a specific schema for the tool's arguments using ZodRawShape format
+    const toolSchema = {
+      action: z.enum(['introspect', 'call']),
+      subtool: z.string().optional(),
+      args: z.record(z.string(), z.any()).optional(),
+    };
+
+    server.tool(
+      tool.name,
+      tool.description,
+      toolSchema,
+      async (args, extra) => {
+        // Call the existing switchboard logic to handle the subtool call
+        const result = await handleSuiteCall(tool.name, args, config);
+
+        // The SDK expects the result to be wrapped in a specific format.
+        // We'll stringify the raw result from the child MCP.
+        return {
+          content: [{ type: "text", text: JSON.stringify(result, null, 2) }]
+        };
+      }
+    );
+  }
+
+  // Set up the server to listen over stdio
+  const transport = new StdioServerTransport();
+  await server.connect(transport);
+  console.error("Switchboard MCP Server running on stdio via SDK");
 
   // Handle graceful shutdown
   process.on('SIGINT', () => {
@@ -61,5 +72,7 @@ async function main() {
   });
 }
 
-// Start the application
-main().catch(console.error);
+main().catch((error) => {
+  console.error("Fatal error in main():", error);
+  process.exit(1);
+});

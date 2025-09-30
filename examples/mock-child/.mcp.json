@@ -1,8 +1,0 @@
-{
-  "name": "mock",
-  "description": "Mock child MCP for testing",
-  "command": {
-    "cmd": "node",
-    "args": ["index.js"]
-  }
-}

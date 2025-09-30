@@ -34,7 +34,8 @@ export class ChildClient {
 
     this.process = spawn(cmd, args, {
       cwd: this.meta.cwd,
-      stdio: ['pipe', 'pipe', 'inherit']
+      stdio: ['pipe', 'pipe', 'inherit'],
+      env: { ...process.env, ...this.meta.command?.env }
     });
 
     this.process.on('exit', (code) => {
@@ -69,33 +70,58 @@ export class ChildClient {
 
   private processBuffer(): void {
     while (true) {
-      if (this.contentLength < 0) {
-        const sep = this.buffer.indexOf('\r\n\r\n');
-        if (sep < 0) break;
+      // Check if we have Content-Length framing (look ahead without consuming)
+      const bufferStart = this.buffer.toString('utf8', 0, Math.min(20, this.buffer.length));
+      const hasContentLength = /Content-Length:/i.test(bufferStart);
 
-        const header = this.buffer.subarray(0, sep).toString('utf8');
-        const match = /Content-Length:\s*(\d+)/i.exec(header);
-        if (!match) {
-          console.error('Missing Content-Length header from child');
-          break;
+      if (hasContentLength) {
+        // Use Content-Length framing
+        if (this.contentLength < 0) {
+          const sep = this.buffer.indexOf('\r\n\r\n');
+          if (sep < 0) break; // Need more data
+
+          const header = this.buffer.subarray(0, sep).toString('utf8');
+          const match = /Content-Length:\s*(\d+)/i.exec(header);
+          if (!match) {
+            process.stderr.write('Missing Content-Length value\n');
+            break;
+          }
+
+          this.contentLength = parseInt(match[1], 10);
+          this.buffer = this.buffer.subarray(sep + 4);
         }
 
-        this.contentLength = parseInt(match[1], 10);
-        this.buffer = this.buffer.subarray(sep + 4);
+        if (this.buffer.length < this.contentLength) break; // Need more data
+
+        const body = this.buffer.subarray(0, this.contentLength);
+        this.buffer = this.buffer.subarray(this.contentLength);
+        this.contentLength = -1;
+
+        try {
+          const message = JSON.parse(body.toString('utf8'));
+          this.handleMessage(message);
+        } catch (error) {
+          process.stderr.write(`Failed to parse Content-Length message: ${error}\n`);
+        }
+        continue;
       }
 
-      if (this.buffer.length < this.contentLength) break;
+      // Try line-delimited JSON (for MCPs that don't use Content-Length)
+      const newlineIdx = this.buffer.indexOf('\n');
+      if (newlineIdx < 0) break; // Need more data
 
-      const body = this.buffer.subarray(0, this.contentLength);
-      this.buffer = this.buffer.subarray(this.contentLength);
-      this.contentLength = -1;
+      const line = this.buffer.subarray(0, newlineIdx).toString('utf8').trim();
+      this.buffer = this.buffer.subarray(newlineIdx + 1);
 
-      try {
-        const message = JSON.parse(body.toString('utf8'));
-        this.handleMessage(message);
-      } catch (error) {
-        console.error('Failed to parse child message:', error);
+      if (line && line.startsWith('{')) {
+        try {
+          const message = JSON.parse(line);
+          this.handleMessage(message);
+        } catch (error) {
+          // Not valid JSON, skip
+        }
       }
+      // Skip non-JSON lines (log messages, etc.)
     }
   }
 
@@ -139,15 +165,19 @@ export class ChildClient {
 
       this.pending.set(id, { resolve, reject, timer });
 
-      this.process!.stdin!.write(header);
-      this.process!.stdin!.write(buffer);
+      // Write header and body together
+      this.process!.stdin!.write(header + buffer.toString('utf8'));
     });
   }
 
   async initialize(): Promise<void> {
     const result = await this.send('initialize', {
-      protocolVersion: '0.1.0',
-      capabilities: {}
+      protocolVersion: '2024-11-05',
+      capabilities: {},
+      clientInfo: {
+        name: 'switchboard',
+        version: '0.1.0'
+      }
     });
     this.initialized = true;
     return result;

@@ -138,7 +138,8 @@ export async function handleSuiteCall(
     return {
       tools: filteredTools.map(tool => ({
         name: tool.name,
-        summary: summarise(tool.description, maxChars)
+        summary: summarise(tool.description, maxChars),
+        inputSchema: tool.inputSchema
       }))
     };
   } else if (action === 'call') {
