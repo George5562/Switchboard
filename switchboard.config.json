@@ -1,7 +1,5 @@
 {
-  "$schema": "https://unpkg.com/switchboard/switchboard.config.schema.json",
   "discoverGlobs": [".switchboard/mcps/*/.mcp.json"],
-  "summariesFile": ".switchboard/summaries.txt",
   "timeouts": {
     "childSpawnMs": 8000,
     "rpcMs": 60000

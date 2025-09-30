@@ -35,9 +35,10 @@ export async function listTopLevelTools(config: Config): Promise<SuiteTool[]> {
     const suiteName = suiteConfig?.suiteName || `${childName}_suite`;
 
     // Use switchboardDescription first, then suite config, then fallback
-    const description = meta.switchboardDescription ||
-                       suiteConfig?.description ||
-                       `Use this tool for ${meta.description || childName}. Actions: 'introspect' | 'call'`;
+    const description =
+      meta.switchboardDescription ||
+      suiteConfig?.description ||
+      `Use this tool for ${meta.description || childName}. Actions: 'introspect' | 'call'`;
 
     tools.push({
       name: suiteName,
@@ -47,17 +48,17 @@ export async function listTopLevelTools(config: Config): Promise<SuiteTool[]> {
         properties: {
           action: {
             type: 'string',
-            enum: ['introspect', 'call']
+            enum: ['introspect', 'call'],
           },
           subtool: {
-            type: 'string'
+            type: 'string',
           },
           args: {
-            type: 'object'
-          }
+            type: 'object',
+          },
         },
-        required: ['action']
-      }
+        required: ['action'],
+      },
     });
   }
 
@@ -97,11 +98,7 @@ function isToolAllowed(toolName: string, config: Config, childName: string): boo
   return true;
 }
 
-export async function handleSuiteCall(
-  toolName: string,
-  params: any,
-  config: Config
-): Promise<any> {
+export async function handleSuiteCall(toolName: string, params: any, config: Config): Promise<any> {
   const childName = getChildNameFromToolName(toolName, config);
   if (!childName) {
     throw new Error(`Unknown suite tool: ${toolName}`);
@@ -127,20 +124,18 @@ export async function handleSuiteCall(
     const tools = await client.listTools();
 
     // Filter based on allow/deny
-    const filteredTools = tools.filter(tool =>
-      isToolAllowed(tool.name, config, childName)
-    );
+    const filteredTools = tools.filter((tool) => isToolAllowed(tool.name, config, childName));
 
     // Return summarized descriptions
-    const maxChars = config.suites[childName]?.summaryMaxChars ||
-                    config.introspection.summaryMaxChars;
+    const maxChars =
+      config.suites[childName]?.summaryMaxChars || config.introspection.summaryMaxChars;
 
     return {
-      tools: filteredTools.map(tool => ({
+      tools: filteredTools.map((tool) => ({
         name: tool.name,
         summary: summarise(tool.description, maxChars),
-        inputSchema: tool.inputSchema
-      }))
+        inputSchema: tool.inputSchema,
+      })),
     };
   } else if (action === 'call') {
     if (!subtool) {
@@ -149,9 +144,7 @@ export async function handleSuiteCall(
 
     // Check if subtool is allowed
     if (!isToolAllowed(subtool, config, childName)) {
-      throw new Error(
-        `Subtool '${subtool}' not allowed by Switchboard (suite '${childName}')`
-      );
+      throw new Error(`Subtool '${subtool}' not allowed by Switchboard (suite '${childName}')`);
     }
 
     // Get or create child client
@@ -166,7 +159,7 @@ export async function handleSuiteCall(
       return await client.callTool(subtool, args || {});
     } catch (error: any) {
       throw new Error(
-        `Failed to call subtool '${subtool}' on child '${childName}': ${error.message}`
+        `Failed to call subtool '${subtool}' on child '${childName}': ${error.message}`,
       );
     }
   } else {

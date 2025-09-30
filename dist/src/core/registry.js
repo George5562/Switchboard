@@ -21,7 +21,7 @@ export async function discover(globs) {
                 description: config.description,
                 switchboardDescription: config.switchboardDescription,
                 cwd: dirname(resolve(file)),
-                command: config.command
+                command: config.command,
             };
             registry[config.name] = meta;
         }

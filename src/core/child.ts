@@ -23,7 +23,7 @@ export class ChildClient {
 
   constructor(
     private meta: ChildMeta,
-    private rpcTimeoutMs: number = 60000
+    private rpcTimeoutMs: number = 60000,
   ) {}
 
   private async ensureStarted(): Promise<void> {
@@ -35,7 +35,7 @@ export class ChildClient {
     this.process = spawn(cmd, args, {
       cwd: this.meta.cwd,
       stdio: ['pipe', 'pipe', 'inherit'],
-      env: { ...process.env, ...this.meta.command?.env }
+      env: { ...process.env, ...this.meta.command?.env },
     });
 
     this.process.on('exit', (code) => {
@@ -124,7 +124,7 @@ export class ChildClient {
         try {
           const message = JSON.parse(line);
           this.handleMessage(message);
-        } catch (error) {
+        } catch {
           // Not valid JSON, skip
         }
       }
@@ -157,12 +157,10 @@ export class ChildClient {
       jsonrpc: '2.0',
       id,
       method,
-      params
+      params,
     };
 
     const json = JSON.stringify(message);
-    const buffer = Buffer.from(json, 'utf8');
-    const header = `Content-Length: ${buffer.length}\r\n\r\n`;
 
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
@@ -183,8 +181,8 @@ export class ChildClient {
       capabilities: {},
       clientInfo: {
         name: 'switchboard',
-        version: '0.1.0'
-      }
+        version: '0.1.0',
+      },
     });
     this.initialized = true;
     return result;
@@ -198,7 +196,7 @@ export class ChildClient {
   async callTool(name: string, args: any): Promise<any> {
     return await this.send('tools/call', {
       name,
-      arguments: args
+      arguments: args,
     });
   }
 

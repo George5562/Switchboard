@@ -48,6 +48,6 @@ export default [
     },
   },
   {
-    ignores: ['dist/', 'node_modules/', '*.cjs'],
+    ignores: ['dist/', 'node_modules/', '*.cjs', '**/*.d.ts'],
   },
 ];

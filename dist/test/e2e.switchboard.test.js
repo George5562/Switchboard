@@ -11,14 +11,14 @@ describe('Switchboard E2E', () => {
                 jsonrpc: '2.0',
                 id,
                 method,
-                params
+                params,
             };
             const json = JSON.stringify(message);
             // Use newline-delimited JSON (MCP SDK standard)
             switchboard.stdin.write(json + '\n');
             // Wait for response with matching id
             const checkResponse = setInterval(() => {
-                const response = messages.find(m => m.id === id);
+                const response = messages.find((m) => m.id === id);
                 if (response) {
                     clearInterval(checkResponse);
                     resolve(response);
@@ -36,7 +36,7 @@ describe('Switchboard E2E', () => {
         switchboard = spawn('node', ['dist/index.js'], {
             cwd: path.resolve('.'),
             stdio: ['pipe', 'pipe', 'inherit'],
-            env: { ...process.env, NODE_ENV: 'test' }
+            env: { ...process.env, NODE_ENV: 'test' },
         });
         // Process stdout (newline-delimited JSON)
         switchboard.stdout.setEncoding('utf8');
@@ -49,14 +49,14 @@ describe('Switchboard E2E', () => {
                         const message = JSON.parse(trimmed);
                         messages.push(message);
                     }
-                    catch (error) {
+                    catch {
                         // Skip non-JSON lines
                     }
                 }
             }
         });
         // Wait for process to be ready
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise((resolve) => setTimeout(resolve, 1000));
     });
     afterAll(() => {
         if (switchboard) {
@@ -69,8 +69,8 @@ describe('Switchboard E2E', () => {
             capabilities: {},
             clientInfo: {
                 name: 'test-client',
-                version: '1.0.0'
-            }
+                version: '1.0.0',
+            },
         });
         expect(response).toBeTruthy();
         expect(response.result).toBeTruthy();
@@ -95,8 +95,8 @@ describe('Switchboard E2E', () => {
             const response = await sendMessage('tools/call', {
                 name: toolName,
                 arguments: {
-                    action: 'introspect'
-                }
+                    action: 'introspect',
+                },
             });
             expect(response).toBeTruthy();
             expect(response.result?.content).toBeDefined();
@@ -122,8 +122,8 @@ describe('Switchboard E2E', () => {
                 arguments: {
                     action: 'call',
                     subtool: 'echo',
-                    args: { message: 'test message' }
-                }
+                    args: { message: 'test message' },
+                },
             });
             expect(response).toBeTruthy();
             expect(response.result?.content).toBeDefined();

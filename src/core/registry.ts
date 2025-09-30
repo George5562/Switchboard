@@ -40,7 +40,7 @@ export async function discover(globs: string[]): Promise<Record<string, ChildMet
         description: config.description,
         switchboardDescription: config.switchboardDescription,
         cwd: dirname(resolve(file)),
-        command: config.command
+        command: config.command,
       };
 
       registry[config.name] = meta;

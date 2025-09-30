@@ -1,6 +1,7 @@
 # MCP Protocol: Lessons Learned
 
 ## Overview
+
 This document captures key lessons learned while building Switchboard, a proxy MCP that aggregates multiple child MCPs. These insights come from real-world debugging and implementation experience.
 
 ---
@@ -8,48 +9,58 @@ This document captures key lessons learned while building Switchboard, a proxy M
 ## 1. Stdio Protocol Variations
 
 ### The Problem
+
 Not all MCPs use the same stdio framing protocol. This caused child MCPs to hang during initialization.
 
 ### Two Protocol Types
 
 #### Content-Length Framing (Standard)
+
 ```
 Content-Length: 123\r\n\r\n
 {"jsonrpc":"2.0","id":1,"method":"initialize",...}
 ```
 
 **Characteristics:**
+
 - Official MCP SDK format
 - Header specifies exact byte length
 - `\r\n\r\n` separator between header and body
 - More robust for binary-safe transmission
 
 **Example MCPs:**
+
 - Mock test MCPs
 - Most SDK-based implementations
 
 #### Line-Delimited JSON
+
 ```
 {"jsonrpc":"2.0","id":1,"method":"initialize",...}\n
 ```
 
 **Characteristics:**
+
 - One JSON object per line
 - Newline-separated messages
 - Log messages intermixed on separate lines
 - Used by some third-party MCPs
 
 **Example MCPs:**
+
 - `@upstash/context7-mcp`
 - Some Node.js-based servers
 
 ### The Solution
+
 Implement a dual-protocol buffer processor that:
+
 1. Looks ahead to detect Content-Length headers
 2. Falls back to line-delimited parsing if no header found
 3. Skips non-JSON lines (log messages)
 
 **Implementation (simplified):**
+
 ```typescript
 private processBuffer(): void {
   while (true) {
@@ -88,25 +99,29 @@ private processBuffer(): void {
 ## 2. Protocol Version Evolution
 
 ### The Issue
+
 Using outdated protocol versions causes compatibility issues with modern MCP implementations.
 
 ### Version History
+
 - **`0.1.0`** - Early development version
 - **`2024-11-05`** - Current stable version (as of this writing)
 
 ### Where Version Matters
+
 ```typescript
 await send('initialize', {
-  protocolVersion: '2024-11-05',  // Must match current spec!
+  protocolVersion: '2024-11-05', // Must match current spec!
   capabilities: {},
   clientInfo: {
     name: 'switchboard',
-    version: '0.1.0'
-  }
+    version: '0.1.0',
+  },
 });
 ```
 
 ### Best Practices
+
 - **Always check the official MCP SDK** for the current protocol version
 - **Include `clientInfo`** in initialize requests (required by spec)
 - **Support capability negotiation** for future extensibility
@@ -118,12 +133,15 @@ await send('initialize', {
 ## 3. Parameter Extraction from MCP SDK
 
 ### The Problem
+
 When using `@modelcontextprotocol/sdk`, parameters weren't being extracted correctly from tool calls. The `action` parameter was missing, causing introspect/call to fail.
 
 ### Root Cause
+
 The SDK's `server.tool()` method signature changed how it handles schemas:
 
 #### ❌ Wrong: Using ZodObject
+
 ```typescript
 const toolSchema = z.object({
   action: z.enum(['introspect', 'call']),
@@ -139,6 +157,7 @@ server.tool(name, description, toolSchema, async (request) => {
 ```
 
 #### ✅ Correct: Using ZodRawShape
+
 ```typescript
 const toolSchema = {
   action: z.enum(['introspect', 'call']),
@@ -154,6 +173,7 @@ server.tool(name, description, toolSchema, async (args, extra) => {
 ```
 
 ### The Difference
+
 - **ZodObject**: SDK treats it as a validator, passes entire request object
 - **ZodRawShape**: SDK extracts parameters into `args`, separates metadata into `extra`
 
@@ -164,35 +184,39 @@ server.tool(name, description, toolSchema, async (args, extra) => {
 ## 4. Introspection Must Include inputSchema
 
 ### The Problem
+
 Hosts need to know what parameters each subtool requires. Returning only `name` and `summary` in introspect responses left hosts guessing.
 
 ### Original Implementation (Broken)
+
 ```typescript
 // router.ts
 return {
-  tools: filteredTools.map(tool => ({
+  tools: filteredTools.map((tool) => ({
     name: tool.name,
-    summary: summarise(tool.description, maxChars)
+    summary: summarise(tool.description, maxChars),
     // ❌ Missing inputSchema!
-  }))
+  })),
 };
 ```
 
 **Result:** Host sees tools but doesn't know how to call them.
 
 ### Fixed Implementation
+
 ```typescript
 // router.ts
 return {
-  tools: filteredTools.map(tool => ({
+  tools: filteredTools.map((tool) => ({
     name: tool.name,
     summary: summarise(tool.description, maxChars),
-    inputSchema: tool.inputSchema  // ✅ Now included
-  }))
+    inputSchema: tool.inputSchema, // ✅ Now included
+  })),
 };
 ```
 
 ### Sample Output
+
 ```json
 {
   "tools": [
@@ -215,6 +239,7 @@ return {
 ```
 
 **Token Impact:**
+
 - **Without inputSchema:** ~50 tokens per tool (name + summary)
 - **With inputSchema:** ~150 tokens per tool
 - **Still better than:** ~200+ tokens for full tool exposure
@@ -226,17 +251,19 @@ return {
 ## 5. Child Process Spawn Configuration
 
 ### Environment Variables
+
 Child MCPs often need environment variables. Don't forget to pass them through:
 
 ```typescript
 this.process = spawn(cmd, args, {
   cwd: this.meta.cwd,
   stdio: ['pipe', 'pipe', 'inherit'],
-  env: { ...process.env, ...this.meta.command?.env }  // ✅ Include child env
+  env: { ...process.env, ...this.meta.command?.env }, // ✅ Include child env
 });
 ```
 
 ### TypeScript Type System
+
 Ensure your types support env variables:
 
 ```typescript
@@ -245,7 +272,7 @@ export interface ChildMeta {
   command?: {
     cmd: string;
     args?: string[];
-    env?: Record<string, string>;  // ✅ Add this
+    env?: Record<string, string>; // ✅ Add this
   };
 }
 ```
@@ -257,6 +284,7 @@ export interface ChildMeta {
 ## 6. Testing Strategies
 
 ### The Stale MCP Problem
+
 **Issue:** MCP hosts cache running instances. Code changes don't take effect until restart.
 
 **Solution:** Use standalone testing with official MCP client SDK:
@@ -265,12 +293,15 @@ export interface ChildMeta {
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 
-const client = new Client({
-  name: 'test-client',
-  version: '1.0.0',
-}, {
-  capabilities: {}
-});
+const client = new Client(
+  {
+    name: 'test-client',
+    version: '1.0.0',
+  },
+  {
+    capabilities: {},
+  },
+);
 
 const transport = new StdioClientTransport({
   command: './dist/switchboard',
@@ -281,27 +312,34 @@ const transport = new StdioClientTransport({
 await client.connect(transport);
 const result = await client.callTool({
   name: 'mock_suite',
-  arguments: { action: 'introspect' }
+  arguments: { action: 'introspect' },
 });
 ```
 
 **Benefits:**
+
 - Fresh process every run
 - No host caching issues
 - Fast iteration
 
 ### Mock MCPs for Validation
+
 Create minimal mock MCPs that respond predictably:
 
 ```javascript
 // mock-server.js
-server.tool('echo', 'Echoes back a message', {
-  message: { type: 'string', description: 'Message to echo' }
-}, async (args) => {
-  return {
-    content: [{ type: 'text', text: `Echo: ${args.message}` }]
-  };
-});
+server.tool(
+  'echo',
+  'Echoes back a message',
+  {
+    message: { type: 'string', description: 'Message to echo' },
+  },
+  async (args) => {
+    return {
+      content: [{ type: 'text', text: `Echo: ${args.message}` }],
+    };
+  },
+);
 ```
 
 **Lesson:** Don't rely on third-party MCPs for core functionality tests.
@@ -311,6 +349,7 @@ server.tool('echo', 'Echoes back a message', {
 ## 7. JSON-RPC Message Handling
 
 ### Writing Messages
+
 Combine header and body in a single write to avoid partial writes:
 
 ```typescript
@@ -323,6 +362,7 @@ this.process.stdin.write(header + buffer.toString('utf8'));
 ```
 
 ### Reading Messages
+
 Handle incomplete messages gracefully:
 
 ```typescript
@@ -348,6 +388,7 @@ private processBuffer(): void {
 ## 8. Error Handling
 
 ### Timeout Management
+
 Always clean up timers to prevent memory leaks:
 
 ```typescript
@@ -360,10 +401,11 @@ this.pending.set(id, { resolve, reject, timer });
 
 // Later, when message arrives:
 const pending = this.pending.get(id);
-if (pending.timer) clearTimeout(pending.timer);  // ✅ Clean up
+if (pending.timer) clearTimeout(pending.timer); // ✅ Clean up
 ```
 
 ### Child Process Cleanup
+
 Handle process exit to reject pending requests:
 
 ```typescript
@@ -384,23 +426,26 @@ this.process.on('exit', (code) => {
 ## 9. Common Pitfalls
 
 ### 1. npx Download Delays
+
 `npx -y package` downloads on first run, causing 30s+ delays. Design timeouts accordingly:
 
 ```typescript
-const SPAWN_TIMEOUT = 8000;   // Child process spawn
-const RPC_TIMEOUT = 60000;     // RPC call (accounts for npx download)
+const SPAWN_TIMEOUT = 8000; // Child process spawn
+const RPC_TIMEOUT = 60000; // RPC call (accounts for npx download)
 ```
 
 ### 2. Stderr as Communication Channel
+
 Some MCPs log to stderr. Don't treat it as errors:
 
 ```typescript
 spawn(cmd, args, {
-  stdio: ['pipe', 'pipe', 'inherit']  // Let stderr through
+  stdio: ['pipe', 'pipe', 'inherit'], // Let stderr through
 });
 ```
 
 ### 3. Async Buffer Processing
+
 Be careful with async operations in event handlers:
 
 ```typescript
@@ -424,6 +469,7 @@ this.process.stdout.on('data', (chunk) => {
 ## Summary
 
 Building a proxy MCP taught us that:
+
 - **Protocol flexibility is essential** - handle both Content-Length and line-delimited
 - **Version compatibility matters** - use current protocol versions
 - **SDK behaviors are subtle** - ZodObject vs ZodRawShape changes everything

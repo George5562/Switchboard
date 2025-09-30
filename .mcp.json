@@ -2,7 +2,10 @@
   "mcpServers": {
     "switchboard": {
       "command": "bash",
-      "args": ["-c", "/Users/georgestephens/Documents/GitHub/Switchboard/dist/switchboard 2> /Users/georgestephens/Documents/GitHub/Switchboard/stderr.log"],
+      "args": [
+        "-c",
+        "/Users/georgestephens/Documents/GitHub/Switchboard/dist/switchboard 2> /Users/georgestephens/Documents/GitHub/Switchboard/stderr.log"
+      ],
       "env": {}
     }
   }

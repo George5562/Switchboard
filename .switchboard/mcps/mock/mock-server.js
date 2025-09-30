@@ -3,7 +3,6 @@
 // Simple mock MCP server that responds to JSON-RPC over stdio
 
 let buffer = '';
-let contentLength = -1;
 
 function sendMessage(msg) {
   const json = JSON.stringify(msg);
@@ -43,8 +42,8 @@ function handleMessage(message) {
       result: {
         protocolVersion: '2024-11-05',
         capabilities: { tools: {} },
-        serverInfo: { name: 'mock', version: '1.0.0' }
-      }
+        serverInfo: { name: 'mock', version: '1.0.0' },
+      },
     });
   } else if (method === 'tools/list') {
     sendMessage({
@@ -54,17 +53,18 @@ function handleMessage(message) {
         tools: [
           {
             name: 'echo',
-            description: 'Echoes back the input message. Useful for testing the communication between host and child MCP.',
+            description:
+              'Echoes back the input message. Useful for testing the communication between host and child MCP.',
             inputSchema: {
               type: 'object',
               properties: {
                 message: {
                   type: 'string',
-                  description: 'The message to echo back'
-                }
+                  description: 'The message to echo back',
+                },
               },
-              required: ['message']
-            }
+              required: ['message'],
+            },
           },
           {
             name: 'add',
@@ -74,18 +74,18 @@ function handleMessage(message) {
               properties: {
                 a: {
                   type: 'number',
-                  description: 'First number'
+                  description: 'First number',
                 },
                 b: {
                   type: 'number',
-                  description: 'Second number'
-                }
+                  description: 'Second number',
+                },
               },
-              required: ['a', 'b']
-            }
-          }
-        ]
-      }
+              required: ['a', 'b'],
+            },
+          },
+        ],
+      },
     });
   } else if (method === 'tools/call') {
     const { name, arguments: args } = message.params;
@@ -95,8 +95,8 @@ function handleMessage(message) {
         jsonrpc: '2.0',
         id,
         result: {
-          content: [{ type: 'text', text: `Echo: ${args.message}` }]
-        }
+          content: [{ type: 'text', text: `Echo: ${args.message}` }],
+        },
       });
     } else if (name === 'add') {
       const sum = args.a + args.b;
@@ -104,21 +104,21 @@ function handleMessage(message) {
         jsonrpc: '2.0',
         id,
         result: {
-          content: [{ type: 'text', text: `${args.a} + ${args.b} = ${sum}` }]
-        }
+          content: [{ type: 'text', text: `${args.a} + ${args.b} = ${sum}` }],
+        },
       });
     } else {
       sendMessage({
         jsonrpc: '2.0',
         id,
-        error: { code: -32601, message: `Unknown tool: ${name}` }
+        error: { code: -32601, message: `Unknown tool: ${name}` },
       });
     }
   } else {
     sendMessage({
       jsonrpc: '2.0',
       id,
-      error: { code: -32601, message: `Unknown method: ${method}` }
+      error: { code: -32601, message: `Unknown method: ${method}` },
     });
   }
 }

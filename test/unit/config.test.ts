@@ -24,7 +24,7 @@ describe('getConfig', () => {
       discoverGlobs: ['.switchboard/mcps/*/.mcp.json'],
       suites: {},
       timeouts: { childSpawnMs: 8000, rpcMs: 60000 },
-      introspection: { mode: 'summary', summaryMaxChars: 160 }
+      introspection: { mode: 'summary', summaryMaxChars: 160 },
     });
   });
 
@@ -34,9 +34,9 @@ describe('getConfig', () => {
       suites: {
         test: {
           suiteName: 'test_custom',
-          description: 'Test suite'
-        }
-      }
+          description: 'Test suite',
+        },
+      },
     };
 
     mockedFs.existsSync.mockImplementation((path) => {

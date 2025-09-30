@@ -1,21 +1,19 @@
-import { mkdir, writeFile, existsSync, readFile, copyFile, rm } from 'fs';
+import { mkdir, writeFile, existsSync, readFile } from 'fs';
 import { join, dirname } from 'path';
 import { promisify } from 'util';
 import { fileURLToPath } from 'url';
 const mkdirAsync = promisify(mkdir);
 const writeFileAsync = promisify(writeFile);
 const readFileAsync = promisify(readFile);
-const copyFileAsync = promisify(copyFile);
-const rmAsync = promisify(rm);
 async function getStandardDescriptions() {
     // Try to load from mcp-descriptions.json file
     // This file should be in the package root after npm install
     const fallbackDescriptions = {
-        "memory": "Persistent memory storage for conversations and data across sessions",
-        "context7": "Smart context management and retrieval for enhanced LLM interactions",
-        "supabase": "Database operations and queries for Supabase projects",
-        "filesystem": "File system operations for reading, writing, and managing files",
-        "playwright": "Browser automation for web testing, scraping, and interaction",
+        memory: 'Persistent memory storage for conversations and data across sessions',
+        context7: 'Smart context management and retrieval for enhanced LLM interactions',
+        supabase: 'Database operations and queries for Supabase projects',
+        filesystem: 'File system operations for reading, writing, and managing files',
+        playwright: 'Browser automation for web testing, scraping, and interaction',
     };
     try {
         // Get the path to this module
@@ -137,7 +135,7 @@ async function copyExistingMcps(existingConfig, switchboardDir) {
         const transformedCommand = {
             cmd: mcpConfig.command,
             args: mcpConfig.args || [],
-            ...((mcpConfig.env) && { env: mcpConfig.env })
+            ...(mcpConfig.env && { env: mcpConfig.env }),
         };
         // Use standard description if available, otherwise use placeholder
         const standardDesc = findMatchingDescription(mcpName, standardDescs);
@@ -149,7 +147,7 @@ async function copyExistingMcps(existingConfig, switchboardDir) {
             name: mcpName,
             description: `${mcpName} MCP`,
             switchboardDescription,
-            command: transformedCommand
+            command: transformedCommand,
         };
         await writeFileAsync(join(mcpDir, '.mcp.json'), JSON.stringify(mcpJsonContent, null, 2));
         copiedMcps.push(mcpName);
@@ -167,11 +165,6 @@ export async function initSwitchboard(cwd) {
     try {
         // Discover existing .mcp.json
         const existingConfig = await discoverExistingMcp(cwd);
-        console.log('Debug: Found existing config:', existingConfig ? 'YES' : 'NO');
-        if (existingConfig) {
-            const mcpsSection = existingConfig.mcps || existingConfig.mcpServers;
-            console.log('Debug: MCPs in config:', Object.keys(mcpsSection || {}));
-        }
         // Create directory structure
         await mkdirAsync(switchboardDir, { recursive: true });
         await mkdirAsync(mcpsDir, { recursive: true });
@@ -179,7 +172,6 @@ export async function initSwitchboard(cwd) {
         const { copiedMcps, standardDescriptions } = existingConfig
             ? await copyExistingMcps(existingConfig, switchboardDir)
             : { copiedMcps: [], standardDescriptions: [] };
-        console.log('Debug: Copied MCPs:', copiedMcps);
         // If no existing MCPs, create example
         if (copiedMcps.length === 0) {
             const exampleMcpDir = join(mcpsDir, 'example-mcp');
@@ -209,7 +201,7 @@ export async function initSwitchboard(cwd) {
         console.log('');
         console.log('Next steps:');
         if (copiedMcps.length > 0) {
-            const needsEditing = copiedMcps.filter(name => !standardDescriptions.includes(name));
+            const needsEditing = copiedMcps.filter((name) => !standardDescriptions.includes(name));
             if (needsEditing.length > 0) {
                 console.log(`  1. Edit the "switchboardDescription" field for these MCPs: ${needsEditing.join(', ')}`);
                 console.log('     (these need custom one-line descriptions for the LLM)');

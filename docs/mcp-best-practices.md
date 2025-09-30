@@ -11,6 +11,7 @@ Based on lessons learned building Switchboard, a proxy MCP that communicates wit
 **Don't assume** all MCPs use Content-Length headers.
 
 #### ✅ Good: Dual Protocol Support
+
 ```typescript
 private processBuffer(): void {
   // Check for Content-Length first
@@ -25,6 +26,7 @@ private processBuffer(): void {
 ```
 
 #### ❌ Bad: Assume One Format
+
 ```typescript
 // This will fail with line-delimited MCPs
 const sep = this.buffer.indexOf('\r\n\r\n');
@@ -40,22 +42,24 @@ if (sep < 0) throw new Error('Invalid message');
 **Always check** the MCP SDK for the current protocol version.
 
 #### ✅ Good: Current Version
+
 ```typescript
 await send('initialize', {
-  protocolVersion: '2024-11-05',  // Current as of writing
+  protocolVersion: '2024-11-05', // Current as of writing
   capabilities: {},
   clientInfo: {
     name: 'your-mcp',
-    version: '1.0.0'
-  }
+    version: '1.0.0',
+  },
 });
 ```
 
 #### ❌ Bad: Outdated Version
+
 ```typescript
 await send('initialize', {
-  protocolVersion: '0.1.0',  // Very old, may be rejected
-  capabilities: {}
+  protocolVersion: '0.1.0', // Very old, may be rejected
+  capabilities: {},
   // Missing clientInfo
 });
 ```
@@ -69,6 +73,7 @@ await send('initialize', {
 **Always provide** clientInfo and capabilities in initialize.
 
 #### ✅ Good: Complete Metadata
+
 ```typescript
 {
   protocolVersion: '2024-11-05',
@@ -84,9 +89,10 @@ await send('initialize', {
 ```
 
 #### ❌ Bad: Minimal Metadata
+
 ```typescript
 {
-  protocolVersion: '2024-11-05'
+  protocolVersion: '2024-11-05';
   // Missing capabilities and clientInfo
 }
 ```
@@ -102,28 +108,31 @@ await send('initialize', {
 **Hosts need schemas** to construct valid tool calls.
 
 #### ✅ Good: Complete Tool Info
+
 ```typescript
 {
-  tools: tools.map(tool => ({
+  tools: tools.map((tool) => ({
     name: tool.name,
     description: tool.description,
-    inputSchema: tool.inputSchema  // ✅ Essential!
-  }))
+    inputSchema: tool.inputSchema, // ✅ Essential!
+  }));
 }
 ```
 
 #### ❌ Bad: Missing Schema
+
 ```typescript
 {
-  tools: tools.map(tool => ({
+  tools: tools.map((tool) => ({
     name: tool.name,
-    description: tool.description
+    description: tool.description,
     // ❌ Host doesn't know what parameters to send
-  }))
+  }));
 }
 ```
 
 **Example Schema:**
+
 ```json
 {
   "type": "object",
@@ -146,21 +155,23 @@ await send('initialize', {
 **Tool names** should clearly indicate what they do.
 
 #### ✅ Good: Clear Names
+
 ```typescript
 tools: [
-  'resolve-library-id',    // Verb + noun
-  'get-library-docs',      // Verb + noun
-  'search-repositories'    // Verb + noun
-]
+  'resolve-library-id', // Verb + noun
+  'get-library-docs', // Verb + noun
+  'search-repositories', // Verb + noun
+];
 ```
 
 #### ❌ Bad: Vague Names
+
 ```typescript
 tools: [
-  'resolve',       // Resolve what?
-  'docs',          // Get or search docs?
-  'repositories'   // What action on repositories?
-]
+  'resolve', // Resolve what?
+  'docs', // Get or search docs?
+  'repositories', // What action on repositories?
+];
 ```
 
 **Why:** Hosts (especially LLMs) need to understand tool purpose from the name.
@@ -172,6 +183,7 @@ tools: [
 **Balance** informativeness with token efficiency.
 
 #### ✅ Good: Informative and Concise
+
 ```typescript
 {
   name: 'resolve-library-id',
@@ -181,6 +193,7 @@ tools: [
 ```
 
 #### ❌ Bad: Too Verbose
+
 ```typescript
 {
   name: 'resolve-library-id',
@@ -190,6 +203,7 @@ tools: [
 ```
 
 #### ❌ Bad: Too Terse
+
 ```typescript
 {
   name: 'resolve-library-id',
@@ -209,12 +223,13 @@ tools: [
 **With `@modelcontextprotocol/sdk`**, use raw Zod shapes for parameter extraction.
 
 #### ✅ Good: Raw Shape
+
 ```typescript
 import { z } from 'zod';
 
 const toolSchema = {
   message: z.string().describe('The message to echo'),
-  count: z.number().optional().describe('Repeat count')
+  count: z.number().optional().describe('Repeat count'),
 };
 
 server.tool('echo', 'Echoes a message', toolSchema, async (args, extra) => {
@@ -225,16 +240,17 @@ server.tool('echo', 'Echoes a message', toolSchema, async (args, extra) => {
 ```
 
 #### ❌ Bad: ZodObject
+
 ```typescript
 const toolSchema = z.object({
   message: z.string(),
-  count: z.number().optional()
+  count: z.number().optional(),
 });
 
 server.tool('echo', 'Echoes a message', toolSchema, async (request) => {
   // request = { signal: {}, _meta: {...}, requestId: 1, message: 'hello' }
   // Parameters mixed with metadata!
-  console.log(request.message);  // undefined or mixed up
+  console.log(request.message); // undefined or mixed up
 });
 ```
 
@@ -249,24 +265,27 @@ server.tool('echo', 'Echoes a message', toolSchema, async (request) => {
 **Child MCPs often need env vars** for API keys, configuration, etc.
 
 #### ✅ Good: Include Environment
+
 ```typescript
 spawn(cmd, args, {
   cwd: this.meta.cwd,
   stdio: ['pipe', 'pipe', 'inherit'],
-  env: { ...process.env, ...this.meta.command?.env }  // ✅
+  env: { ...process.env, ...this.meta.command?.env }, // ✅
 });
 ```
 
 #### ❌ Bad: Ignore Environment
+
 ```typescript
 spawn(cmd, args, {
   cwd: this.meta.cwd,
-  stdio: ['pipe', 'pipe', 'inherit']
+  stdio: ['pipe', 'pipe', 'inherit'],
   // ❌ Child can't access needed env vars
 });
 ```
 
 **Configuration:**
+
 ```json
 {
   "command": {
@@ -289,6 +308,7 @@ spawn(cmd, args, {
 **Different operations** need different timeout values.
 
 #### ✅ Good: Realistic Timeouts
+
 ```typescript
 {
   childSpawnMs: 8000,   // Child process spawn
@@ -297,6 +317,7 @@ spawn(cmd, args, {
 ```
 
 #### ❌ Bad: Too Aggressive
+
 ```typescript
 {
   childSpawnMs: 1000,   // Too short for npx
@@ -313,6 +334,7 @@ spawn(cmd, args, {
 **Always clean up** timers, processes, and promises.
 
 #### ✅ Good: Complete Cleanup
+
 ```typescript
 close(): void {
   // Kill process
@@ -334,6 +356,7 @@ close(): void {
 ```
 
 #### ❌ Bad: Partial Cleanup
+
 ```typescript
 close(): void {
   if (this.process) {
@@ -368,20 +391,23 @@ import { writeFileSync } from 'fs';
 
 const log = (msg) => {
   const line = `[test] ${msg}\n`;
-  process.stdout.write(line);  // Show in terminal
-  writeFileSync('test.log', line, { flag: 'a' });  // Save to file
+  process.stdout.write(line); // Show in terminal
+  writeFileSync('test.log', line, { flag: 'a' }); // Save to file
 };
 
 async function runTest() {
   writeFileSync('test.log', ''); // Clear log
 
   log('Creating MCP client...');
-  const client = new Client({
-    name: 'test-client',
-    version: '1.0.0',
-  }, {
-    capabilities: {}
-  });
+  const client = new Client(
+    {
+      name: 'test-client',
+      version: '1.0.0',
+    },
+    {
+      capabilities: {},
+    },
+  );
 
   log('Creating stdio transport...');
   const transport = new StdioClientTransport({
@@ -407,14 +433,13 @@ async function runTest() {
     log('\n=== Calling Tool ===');
     const result = await client.callTool({
       name: 'echo',
-      arguments: { message: 'test' }
+      arguments: { message: 'test' },
     });
     log(`Result: ${JSON.stringify(result, null, 2)}`);
 
     log('\n=== ✓ All Tests Passed ===');
     await client.close();
     process.exit(0);
-
   } catch (error) {
     log(`\n✗ Test failed: ${error.message}`);
     log(`Stack: ${error.stack}`);
@@ -426,6 +451,7 @@ runTest();
 ```
 
 **Benefits:**
+
 - No manual protocol handling
 - Handles both Content-Length and line-delimited automatically
 - Type-safe with TypeScript
@@ -433,11 +459,13 @@ runTest();
 - Logs to both terminal and file for debugging
 
 Run after every build:
+
 ```bash
 npm run build && node test_standalone.js
 ```
 
 #### ❌ Bad: Only Test via Host
+
 ```bash
 # Make code changes
 npm run build
@@ -538,11 +566,13 @@ child.stdout.on('data', (chunk) => {
 ```
 
 **Use this when:**
+
 - Testing protocol framing edge cases
 - Debugging buffer processing issues
 - Verifying dual-protocol support
 
 **Don't use for:**
+
 - Regular development (use SDK instead)
 - Production code (use SDK)
 
@@ -553,6 +583,7 @@ child.stdout.on('data', (chunk) => {
 **Don't depend on third-party MCPs** for core testing.
 
 #### ✅ Good: Minimal Mock
+
 ```javascript
 // mock-mcp.js
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -560,19 +591,25 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 
 const server = new McpServer({ name: 'mock', version: '1.0.0' });
 
-server.tool('echo', 'Echoes a message', {
-  message: { type: 'string' }
-}, async (args) => {
-  return {
-    content: [{ type: 'text', text: `Echo: ${args.message}` }]
-  };
-});
+server.tool(
+  'echo',
+  'Echoes a message',
+  {
+    message: { type: 'string' },
+  },
+  async (args) => {
+    return {
+      content: [{ type: 'text', text: `Echo: ${args.message}` }],
+    };
+  },
+);
 
 const transport = new StdioServerTransport();
 await server.connect(transport);
 ```
 
 **Usage:**
+
 ```bash
 echo '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"echo","arguments":{"message":"test"}}}' | node mock-mcp.js
 ```
@@ -588,6 +625,7 @@ echo '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"echo","arg
 **TCP streams can split messages** at any byte.
 
 #### ✅ Good: Wait for Complete Message
+
 ```typescript
 private processBuffer(): void {
   while (true) {
@@ -610,6 +648,7 @@ private processBuffer(): void {
 ```
 
 #### ❌ Bad: Assume Complete Messages
+
 ```typescript
 this.process.stdout.on('data', (chunk) => {
   // ❌ Chunk might be incomplete!
@@ -627,23 +666,25 @@ this.process.stdout.on('data', (chunk) => {
 **Help users debug** by including context in errors.
 
 #### ✅ Good: Descriptive Errors
+
 ```typescript
 if (!subtool) {
   throw new Error(
     `Missing required parameter 'subtool' when calling action='call' ` +
-    `on suite '${suiteName}'. Available subtools: ${availableTools.join(', ')}`
+      `on suite '${suiteName}'. Available subtools: ${availableTools.join(', ')}`,
   );
 }
 
 if (!isToolAllowed(subtool, config, childName)) {
   throw new Error(
     `Subtool '${subtool}' is not allowed by configuration. ` +
-    `Check 'expose.allow' or 'expose.deny' rules for suite '${childName}'.`
+      `Check 'expose.allow' or 'expose.deny' rules for suite '${childName}'.`,
   );
 }
 ```
 
 #### ❌ Bad: Vague Errors
+
 ```typescript
 if (!subtool) {
   throw new Error('Missing parameter');
@@ -665,6 +706,7 @@ if (!isToolAllowed(subtool, config, childName)) {
 **Don't spawn all child processes** on startup.
 
 #### ✅ Good: Lazy Initialization
+
 ```typescript
 async listTools(): Promise<Tool[]> {
   await this.ensureStarted();  // Only spawn if needed
@@ -680,6 +722,7 @@ private async ensureStarted(): Promise<void> {
 ```
 
 #### ❌ Bad: Eager Spawning
+
 ```typescript
 constructor(meta: ChildMeta) {
   // ❌ Spawn immediately, even if never used
@@ -697,12 +740,13 @@ constructor(meta: ChildMeta) {
 **File system operations are slow.** Cache when possible.
 
 #### ✅ Good: Cached Discovery
+
 ```typescript
 let cachedRegistry: Record<string, ChildMeta> | null = null;
 
 export async function discover(globs: string[]): Promise<Record<string, ChildMeta>> {
   if (cachedRegistry) {
-    return cachedRegistry;  // Return cached result
+    return cachedRegistry; // Return cached result
   }
 
   const files = await globby(globs);
@@ -713,6 +757,7 @@ export async function discover(globs: string[]): Promise<Record<string, ChildMet
 ```
 
 #### ❌ Bad: Repeated Discovery
+
 ```typescript
 export async function discover(globs: string[]): Promise<Record<string, ChildMeta>> {
   // ❌ Re-discover every time
@@ -733,6 +778,7 @@ export async function discover(globs: string[]): Promise<Record<string, ChildMet
 **Don't trust** user-provided .mcp.json files blindly.
 
 #### ✅ Good: Validation
+
 ```typescript
 const config = JSON.parse(content);
 
@@ -755,6 +801,7 @@ if (!fs.existsSync(cmd)) {
 ```
 
 #### ❌ Bad: No Validation
+
 ```typescript
 const config = JSON.parse(content);
 spawn(config.command.cmd, config.command.args, {...});  // ❌ Could be anything!
@@ -769,11 +816,12 @@ spawn(config.command.cmd, config.command.args, {...});  // ❌ Could be anything
 **Limit** where child MCPs can access files.
 
 #### ✅ Good: Restricted CWD
+
 ```typescript
 const meta: ChildMeta = {
   name: config.name,
-  cwd: path.join('.switchboard', 'mcps', config.name),  // Sandboxed
-  command: config.command
+  cwd: path.join('.switchboard', 'mcps', config.name), // Sandboxed
+  command: config.command,
 };
 
 // Ensure directory exists
@@ -781,11 +829,12 @@ fs.mkdirSync(meta.cwd, { recursive: true });
 ```
 
 #### ❌ Bad: Unrestricted Access
+
 ```typescript
 const meta: ChildMeta = {
   name: config.name,
-  cwd: process.cwd(),  // ❌ Full repository access
-  command: config.command
+  cwd: process.cwd(), // ❌ Full repository access
+  command: config.command,
 };
 ```
 
@@ -800,6 +849,7 @@ const meta: ChildMeta = {
 **Use JSON Schema descriptions** to guide users.
 
 #### ✅ Good: Well-Documented Schema
+
 ```typescript
 {
   type: 'object',
@@ -821,6 +871,7 @@ const meta: ChildMeta = {
 ```
 
 #### ❌ Bad: Minimal Documentation
+
 ```typescript
 {
   type: 'object',
@@ -841,6 +892,7 @@ const meta: ChildMeta = {
 **Show** how to use your MCP with real examples.
 
 #### ✅ Good: Concrete Examples
+
 ````markdown
 ## Usage Examples
 
@@ -852,12 +904,13 @@ await client.callTool({
   arguments: {
     action: 'call',
     subtool: 'resolve-library-id',
-    args: { libraryName: 'react' }
-  }
+    args: { libraryName: 'react' },
+  },
 });
 ```
 
 **Response:**
+
 ```json
 {
   "libraries": [
@@ -872,6 +925,7 @@ await client.callTool({
 ````
 
 #### ❌ Bad: Abstract Descriptions
+
 ```markdown
 ## Usage
 
@@ -887,45 +941,54 @@ Call the resolve tool with a library name to find matching libraries.
 When building an MCP:
 
 **Protocol:**
+
 - [ ] Support both Content-Length and line-delimited JSON
 - [ ] Use current protocol version (2024-11-05)
 - [ ] Include clientInfo in initialize
 
 **Tools:**
+
 - [ ] Include inputSchema in all tool definitions
 - [ ] Use clear, action-oriented tool names
 - [ ] Keep descriptions concise but complete
 
 **SDK:**
+
 - [ ] Use ZodRawShape, not ZodObject
 - [ ] Separate args from metadata in handlers
 
 **Child Processes:**
+
 - [ ] Pass environment variables through
 - [ ] Set appropriate timeouts (account for npx)
 - [ ] Clean up resources on exit
 
 **Testing:**
+
 - [ ] Create standalone test scripts
 - [ ] Build mock MCPs for core functionality
 - [ ] Test with fresh processes, not cached hosts
 
 **Error Handling:**
+
 - [ ] Handle incomplete messages gracefully
 - [ ] Provide actionable error messages
 - [ ] Clean up timers and pending promises
 
 **Performance:**
+
 - [ ] Implement lazy loading
 - [ ] Cache discovery results
 - [ ] Reuse child processes when possible
 
 **Security:**
+
 - [ ] Validate child MCP configurations
 - [ ] Sandbox working directories
 - [ ] Don't log sensitive data
 
 **Documentation:**
+
 - [ ] Document schemas with descriptions
 - [ ] Provide concrete examples
 - [ ] Include troubleshooting guide

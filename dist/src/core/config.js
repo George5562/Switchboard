@@ -5,35 +5,41 @@ import { join } from 'path';
 const SuiteConfigSchema = z.object({
     suiteName: z.string().optional(),
     description: z.string().optional(),
-    expose: z.object({
+    expose: z
+        .object({
         allow: z.array(z.string()).optional(),
-        deny: z.array(z.string()).optional()
-    }).optional(),
-    summaryMaxChars: z.number().optional()
+        deny: z.array(z.string()).optional(),
+    })
+        .optional(),
+    summaryMaxChars: z.number().optional(),
 });
 const ConfigSchema = z.object({
-    discoverGlobs: z.array(z.string()).default([".switchboard/mcps/*/.mcp.json"]),
+    discoverGlobs: z.array(z.string()).default(['.switchboard/mcps/*/.mcp.json']),
     suites: z.record(z.string(), SuiteConfigSchema).default({}),
-    timeouts: z.object({
+    timeouts: z
+        .object({
         childSpawnMs: z.number().default(8000),
-        rpcMs: z.number().default(60000)
-    }).default({
-        childSpawnMs: 8000,
-        rpcMs: 60000
-    }),
-    introspection: z.object({
-        mode: z.enum(["summary", "full", "redacted"]).default("summary"),
-        summaryMaxChars: z.number().default(160)
-    }).default({
-        mode: "summary",
-        summaryMaxChars: 160
+        rpcMs: z.number().default(60000),
     })
+        .default({
+        childSpawnMs: 8000,
+        rpcMs: 60000,
+    }),
+    introspection: z
+        .object({
+        mode: z.enum(['summary', 'full', 'redacted']).default('summary'),
+        summaryMaxChars: z.number().default(160),
+    })
+        .default({
+        mode: 'summary',
+        summaryMaxChars: 160,
+    }),
 });
 const defaultConfig = {
-    discoverGlobs: [".switchboard/mcps/*/.mcp.json"],
+    discoverGlobs: ['.switchboard/mcps/*/.mcp.json'],
     suites: {},
     timeouts: { childSpawnMs: 8000, rpcMs: 60000 },
-    introspection: { mode: "summary", summaryMaxChars: 160 }
+    introspection: { mode: 'summary', summaryMaxChars: 160 },
 };
 let cachedConfig = null;
 export async function getConfig(cwd = process.cwd()) {
@@ -44,7 +50,7 @@ export async function getConfig(cwd = process.cwd()) {
         'switchboard.config.json',
         'switchboard.config.js',
         'switchboard.config.cjs',
-        'switchboard.config.mjs'
+        'switchboard.config.mjs',
     ];
     for (const configPath of configPaths) {
         const fullPath = join(cwd, configPath);

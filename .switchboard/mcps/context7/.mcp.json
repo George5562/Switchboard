@@ -4,10 +4,7 @@
   "switchboardDescription": "Smart context management and retrieval for enhanced LLM interactions",
   "command": {
     "cmd": "npx",
-    "args": [
-      "-y",
-      "@upstash/context7-mcp"
-    ],
+    "args": ["-y", "@upstash/context7-mcp"],
     "env": {
       "DEFAULT_MINIMUM_TOKENS": "6000"
     }

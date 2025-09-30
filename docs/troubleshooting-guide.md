@@ -7,11 +7,13 @@
 ## 1. Child MCP Times Out During Initialize
 
 ### Symptoms
+
 ```
 Error: RPC timeout for initialize
 ```
 
 Debug log shows:
+
 ```
 [debug] Starting context7 with cmd=npx args=["-y","@upstash/context7-mcp"]
 [debug] Initializing context7
@@ -22,9 +24,11 @@ Debug log shows:
 ### Possible Causes
 
 #### A. First npx Download
+
 **Problem:** `npx -y package` downloads the package on first run, which can take 30-60 seconds.
 
 **Solution:**
+
 ```typescript
 // config.ts
 timeouts: {
@@ -34,15 +38,17 @@ timeouts: {
 ```
 
 **Or pre-install:**
+
 ```bash
 npm install -g @upstash/context7-mcp
 ```
 
 Then update `.mcp.json`:
+
 ```json
 {
   "command": {
-    "cmd": "context7-mcp",  // Direct binary, not npx
+    "cmd": "context7-mcp", // Direct binary, not npx
     "args": []
   }
 }
@@ -59,19 +65,23 @@ const timer = setTimeout(() => {
 ```
 
 First call needs extra time because:
+
 - npx downloads the package (can take 20-30s)
 - Package extraction and initialization
 - Subsequent calls are fast (package cached)
 
 #### B. Wrong Protocol Framing
+
 **Problem:** Child uses line-delimited JSON, but Switchboard expects Content-Length headers.
 
 **Diagnosis:**
+
 ```bash
 echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{...}}' | npx -y @upstash/context7-mcp
 ```
 
 If you see output like:
+
 ```
 Context7 Documentation MCP Server running on stdio
 {"result":{...},"jsonrpc":"2.0","id":1}
@@ -82,9 +92,11 @@ The child uses **line-delimited JSON** (no Content-Length header).
 **Solution:** Ensure `child.ts:processBuffer()` handles both protocols (should be implemented in current version).
 
 #### C. Missing Environment Variables
+
 **Problem:** Child MCP requires env vars that aren't being passed.
 
 **Solution:**
+
 ```json
 {
   "name": "context7",
@@ -100,9 +112,10 @@ The child uses **line-delimited JSON** (no Content-Length header).
 ```
 
 Ensure `child.ts` passes env:
+
 ```typescript
 spawn(cmd, args, {
-  env: { ...process.env, ...this.meta.command?.env }
+  env: { ...process.env, ...this.meta.command?.env },
 });
 ```
 
@@ -111,26 +124,32 @@ spawn(cmd, args, {
 ## 2. Host Can't Determine Required Parameters
 
 ### Symptoms
+
 Host (Claude Code, etc.) tries to call a subtool but doesn't know what arguments to provide.
 
 ### Example
+
 ```
 Host: I want to call 'resolve-library-id' but I don't know what parameters it needs.
 ```
 
 ### Root Cause
+
 The `introspect` action returns tools without `inputSchema`.
 
 ### Diagnosis
+
 Call introspect manually:
+
 ```typescript
 const result = await client.callTool({
   name: 'context7_suite',
-  arguments: { action: 'introspect' }
+  arguments: { action: 'introspect' },
 });
 ```
 
 If result looks like:
+
 ```json
 {
   "tools": [
@@ -144,19 +163,21 @@ If result looks like:
 ```
 
 ### Solution
+
 Ensure `router.ts:139-143` includes inputSchema:
 
 ```typescript
 return {
-  tools: filteredTools.map(tool => ({
+  tools: filteredTools.map((tool) => ({
     name: tool.name,
     summary: summarise(tool.description, maxChars),
-    inputSchema: tool.inputSchema  // ✅ Must be here
-  }))
+    inputSchema: tool.inputSchema, // ✅ Must be here
+  })),
 };
 ```
 
 Rebuild and restart:
+
 ```bash
 npm run build
 # Restart MCP host (Claude Code, etc.)
@@ -176,19 +197,19 @@ async function verify() {
   const client = new Client({ name: 'test', version: '1.0.0' }, {});
   const transport = new StdioClientTransport({
     command: './dist/switchboard',
-    args: []
+    args: [],
   });
 
   await client.connect(transport);
 
   // List tools
   const tools = (await client.listTools()).tools;
-  console.log(`Suite tools: ${tools.map(t => t.name).join(', ')}`);
+  console.log(`Suite tools: ${tools.map((t) => t.name).join(', ')}`);
 
   // Introspect first suite
   const introspect = await client.callTool({
     name: tools[0].name,
-    arguments: { action: 'introspect' }
+    arguments: { action: 'introspect' },
   });
 
   // Parse result
@@ -219,11 +240,13 @@ verify().catch(console.error);
 ```
 
 **Run it:**
+
 ```bash
 node verify-inputschema.js
 ```
 
 **Expected output:**
+
 ```
 Suite tools: mock_suite
 
@@ -249,18 +272,23 @@ inputSchema present: ✅ YES
 ## 3. Changes Not Taking Effect
 
 ### Symptoms
+
 You made code changes, rebuilt, but the MCP still behaves the old way.
 
 ### Root Cause
+
 **MCP hosts cache running instances.** Your changes are built, but the host is still using the old process.
 
 ### Diagnosis
+
 Check debug.log for old debug messages that don't exist in current code:
+
 ```
 [debug] Old message that was removed
 ```
 
 Check running processes:
+
 ```bash
 ps aux | grep switchboard
 ```
@@ -270,18 +298,21 @@ You'll see multiple instances with different start times.
 ### Solution
 
 #### Option 1: Restart MCP Host (Easiest)
+
 ```bash
 # Exit Claude Code completely
 # Restart Claude Code
 ```
 
 #### Option 2: Kill Processes Manually
+
 ```bash
 pkill -f switchboard
 # Next MCP call will spawn fresh instance
 ```
 
 #### Option 3: Test Standalone
+
 ```bash
 cd /Users/georgestephens/Documents/GitHub/Switchboard
 node test_with_sdk.js  # Uses fresh process every time
@@ -292,7 +323,9 @@ node test_with_sdk.js  # Uses fresh process every time
 ## 4. "Parameter Extraction Failed"
 
 ### Symptoms
+
 Debug log shows:
+
 ```json
 {
   "signal": {},
@@ -304,12 +337,15 @@ Debug log shows:
 But `action` parameter is missing.
 
 ### Root Cause
+
 Using `z.object()` instead of raw Zod shape with MCP SDK.
 
 ### Solution
+
 Change `index.ts:35-39`:
 
 #### ❌ Wrong
+
 ```typescript
 const toolSchema = z.object({
   action: z.enum(['introspect', 'call']),
@@ -323,6 +359,7 @@ server.tool(name, description, toolSchema, async (request) => {
 ```
 
 #### ✅ Correct
+
 ```typescript
 const toolSchema = {
   action: z.enum(['introspect', 'call']),
@@ -341,6 +378,7 @@ server.tool(name, description, toolSchema, async (args, extra) => {
 ## 5. Buffer Processing Errors
 
 ### Symptoms
+
 ```
 Failed to parse child message: Unexpected token...
 ```
@@ -348,7 +386,9 @@ Failed to parse child message: Unexpected token...
 Or child responds but messages are never handled.
 
 ### Diagnosis
+
 Add temporary logging:
+
 ```typescript
 this.process.stdout.on('data', (chunk) => {
   console.error('RAW:', chunk.toString().substring(0, 200));
@@ -358,11 +398,13 @@ this.process.stdout.on('data', (chunk) => {
 ```
 
 Check if output is:
+
 - **Content-Length format:** `Content-Length: 123\r\n\r\n{...}`
 - **Line-delimited:** `Context7 running\n{"jsonrpc":...}\n`
 - **Mixed:** Both log messages and JSON on separate lines
 
 ### Solution
+
 Ensure `processBuffer()` checks for protocol type before parsing:
 
 ```typescript
@@ -389,35 +431,41 @@ private processBuffer(): void {
 ## 6. Child Process Never Spawns
 
 ### Symptoms
+
 No stderr output from child MCP. Process appears to hang.
 
 ### Diagnosis
+
 Check the command is valid:
+
 ```bash
 # Test manually
 npx -y @upstash/context7-mcp --help
 ```
 
 Check cwd exists:
+
 ```typescript
 const fs = require('fs');
 const path = '.switchboard/mcps/context7';
-console.log(fs.existsSync(path));  // Should be true
+console.log(fs.existsSync(path)); // Should be true
 ```
 
 ### Possible Causes
 
 #### A. Invalid Command
+
 ```json
 {
   "command": {
-    "cmd": "context7-mcp",  // ❌ Not in PATH
+    "cmd": "context7-mcp", // ❌ Not in PATH
     "args": []
   }
 }
 ```
 
 **Solution:** Use full path or npx:
+
 ```json
 {
   "command": {
@@ -428,19 +476,21 @@ console.log(fs.existsSync(path));  // Should be true
 ```
 
 #### B. Wrong Working Directory
+
 ```typescript
 spawn(cmd, args, {
-  cwd: '/path/that/does/not/exist',  // ❌
-  stdio: ['pipe', 'pipe', 'inherit']
+  cwd: '/path/that/does/not/exist', // ❌
+  stdio: ['pipe', 'pipe', 'inherit'],
 });
 ```
 
 **Solution:** Verify cwd in registry discovery:
+
 ```typescript
 const meta: ChildMeta = {
   name: config.name,
-  cwd: dirname(resolve(file)),  // ✅ Directory of .mcp.json
-  command: config.command
+  cwd: dirname(resolve(file)), // ✅ Directory of .mcp.json
+  command: config.command,
 };
 ```
 
@@ -454,7 +504,7 @@ import { spawn } from 'child_process';
 
 console.log('Testing spawn of ./dist/switchboard...');
 const child = spawn('./dist/switchboard', [], {
-  stdio: ['pipe', 'pipe', 'inherit']
+  stdio: ['pipe', 'pipe', 'inherit'],
 });
 
 child.stdout.on('data', (chunk) => {
@@ -472,7 +522,8 @@ child.on('exit', (code) => {
 });
 
 setTimeout(() => {
-  const msg = '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0.0"}}}';
+  const msg =
+    '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0.0"}}}';
   const header = `Content-Length: ${Buffer.byteLength(msg)}\r\n\r\n`;
 
   console.log('Sending initialize...');
@@ -487,12 +538,14 @@ setTimeout(() => {
 ```
 
 **Expected if working:**
+
 ```
 Testing spawn of ./dist/switchboard...
 ✓ Got output: Content-Length: 123\r\n\r\n{"jsonrpc":"2.0"
 ```
 
 **If nothing appears:**
+
 - Check binary exists: `ls -la ./dist/switchboard`
 - Check permissions: `chmod +x ./dist/switchboard`
 - Check shebang: `head -1 ./dist/switchboard`
@@ -503,12 +556,15 @@ Testing spawn of ./dist/switchboard...
 ## 7. Tool Not Found in Suite
 
 ### Symptoms
+
 ```
 Error: Unknown suite tool: playwright_suite
 ```
 
 ### Diagnosis
+
 Check discovery is working:
+
 ```bash
 node -e "
 import { discover } from './dist/core/registry.js';
@@ -523,13 +579,15 @@ console.log(Object.keys(registry));
 ### Possible Causes
 
 #### A. Wrong Glob Pattern
+
 ```json
 {
-  "discoverGlobs": ["mcps/*/.mcp.json"]  // ❌ Should be .switchboard/mcps
+  "discoverGlobs": ["mcps/*/.mcp.json"] // ❌ Should be .switchboard/mcps
 }
 ```
 
 **Solution:**
+
 ```json
 {
   "discoverGlobs": [".switchboard/mcps/*/.mcp.json"]
@@ -537,11 +595,12 @@ console.log(Object.keys(registry));
 ```
 
 #### B. Custom Suite Name
+
 ```json
 {
   "suites": {
     "playwright": {
-      "suiteName": "browser_suite"  // Custom name, not playwright_suite
+      "suiteName": "browser_suite" // Custom name, not playwright_suite
     }
   }
 }
@@ -554,13 +613,16 @@ console.log(Object.keys(registry));
 ## 8. Test Scripts Timeout
 
 ### Symptoms
+
 ```bash
 node test_with_sdk.js
 # Hangs forever
 ```
 
 ### Diagnosis
+
 Check if Switchboard started:
+
 ```
 Switchboard MCP Server running on stdio via SDK
 ```
@@ -568,17 +630,20 @@ Switchboard MCP Server running on stdio via SDK
 If not, check for errors in stdout/stderr.
 
 If it started but hangs:
+
 - **Check MCP client timeout:** Increase timeout in test script
 - **Check child MCP timeout:** May be waiting for first npx download
 - **Check protocol mismatch:** Child using different stdio format
 
 ### Solution
+
 Add aggressive timeouts to test:
+
 ```typescript
 setTimeout(() => {
   console.log('Test timed out!');
   process.exit(1);
-}, 45000);  // 45 second hard limit
+}, 45000); // 45 second hard limit
 ```
 
 ---
@@ -588,16 +653,19 @@ setTimeout(() => {
 When things go wrong, check these in order:
 
 1. **Is Switchboard starting?**
+
    ```
    Switchboard MCP Server running on stdio via SDK
    ```
 
 2. **Is child MCP spawning?**
+
    ```bash
    ps aux | grep context7-mcp
    ```
 
 3. **Is child MCP responding?**
+
    ```bash
    echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{...}}' | npx -y @upstash/context7-mcp
    ```

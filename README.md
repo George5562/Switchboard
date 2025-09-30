@@ -50,6 +50,7 @@ npm install -g switchboard
 ```
 
 Or use directly:
+
 ```bash
 npx switchboard
 ```
@@ -57,24 +58,28 @@ npx switchboard
 ## Quick Start
 
 1. **Install Switchboard globally:**
+
 ```bash
 npm install -g switchboard
 ```
 
 2. **Initialize in your project (auto-migrates existing MCPs):**
+
 ```bash
 cd your-project
 switchboard init
 ```
 
 This will:
+
 - Auto-detect your existing `.mcp.json` file
 - Migrate all MCPs to `.switchboard/mcps/[name]/.mcp.json`
 - Add `switchboardDescription` placeholders for each MCP
 - Show you the replacement `.mcp.json` template
 
 3. **Edit the descriptions:**
-Edit the `"switchboardDescription"` field in each migrated MCP file:
+   Edit the `"switchboardDescription"` field in each migrated MCP file:
+
 ```json
 {
   "name": "filesystem",
@@ -88,6 +93,7 @@ Edit the `"switchboardDescription"` field in each migrated MCP file:
 ```
 
 4. **Replace your `.mcp.json`** with the template shown (supports both `mcps` and `mcpServers` formats):
+
 ```json
 {
   "mcpServers": {
@@ -167,14 +173,16 @@ Each suite tool accepts these parameters:
 ### Actions
 
 **`introspect`**: Discover available subtools
+
 ```javascript
 {
-  action: "introspect"
+  action: 'introspect';
 }
 // Returns: [{ name: "click", summary: "Click an element" }, ...]
 ```
 
 **`call`**: Execute a specific subtool
+
 ```javascript
 {
   action: "call",
@@ -189,12 +197,14 @@ Each suite tool accepts these parameters:
 ✅ **Comprehensive testing confirms production readiness:**
 
 ### Core Functionality
+
 - **Protocol Compliance**: Built on the official `@modelcontextprotocol/sdk` for guaranteed protocol compliance.
 - **Token Optimization**: 85-90% reduction demonstrated (14 tools → 2 suites)
 - **Child Discovery**: Successfully finds and manages child MCPs
 - **Error Handling**: Graceful failure modes and clear error messages
 
 ### Test Coverage
+
 ```
 ✓ Unit Tests: 10/10 passing
   - Config loading and validation
@@ -212,6 +222,7 @@ Each suite tool accepts these parameters:
 ```
 
 ### Performance
+
 - **Startup**: ~1000ms (includes child discovery)
 - **Tool Listing**: ~immediate (cached)
 - **Child Operations**: ~2000ms (spawn + RPC)
@@ -266,22 +277,23 @@ console.log(tools);
 // [{ name: "playwright_suite", description: "Browser automation..." }]
 
 // Discover subtools
-const subtools = await mcp.callTool("playwright_suite", {
-  action: "introspect"
+const subtools = await mcp.callTool('playwright_suite', {
+  action: 'introspect',
 });
 // [{ name: "click", summary: "Click element" }, ...]
 
 // Execute subtool
-const result = await mcp.callTool("playwright_suite", {
-  action: "call",
-  subtool: "click",
-  args: { selector: "#login-button" }
+const result = await mcp.callTool('playwright_suite', {
+  action: 'call',
+  subtool: 'click',
+  args: { selector: '#login-button' },
 });
 ```
 
 ## Development
 
 ### Project Structure
+
 ```
 src/
 ├── index.ts              # Main entrypoint; discovers and registers tools with the MCP SDK.
@@ -294,6 +306,7 @@ src/
 ```
 
 ### Scripts
+
 ```bash
 npm run build        # Build with esbuild
 npm run dev          # Development with ts-node
@@ -303,13 +316,16 @@ npm run format       # Prettier
 ```
 
 ### Building
+
 ```bash
 npm run build
 # Creates: dist/index.js (bundled) + dist/switchboard (executable)
 ```
 
 ### Development Notes
+
 **⚠️ Important**: The current `.mcp.json` uses an absolute path for local development with `npm link`. Before deploying or publishing examples, update the configuration to use:
+
 ```json
 {
   "mcpServers": {
@@ -327,6 +343,7 @@ npm run build
 **Important for Development:** MCP hosts (Claude Code, etc.) cache running instances. After rebuilding, changes won't take effect until the host restarts.
 
 **Quick Test Without Restart:**
+
 ```bash
 # After making changes
 npm run build
@@ -336,6 +353,7 @@ node test-standalone.js
 ```
 
 **Example standalone test:**
+
 ```typescript
 #!/usr/bin/env node
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
@@ -345,16 +363,16 @@ const client = new Client({ name: 'test', version: '1.0.0' }, {});
 const transport = new StdioClientTransport({
   command: './dist/switchboard',
   args: [],
-  stderr: 'inherit'
+  stderr: 'inherit',
 });
 
 await client.connect(transport);
 const tools = (await client.listTools()).tools;
-console.log('Tools:', tools.map(t => t.name).join(', '));
+console.log('Tools:', tools.map((t) => t.name).join(', '));
 
 const introspect = await client.callTool({
   name: tools[0].name,
-  arguments: { action: 'introspect' }
+  arguments: { action: 'introspect' },
 });
 console.log('Introspect:', introspect);
 await client.close();
@@ -369,6 +387,7 @@ await client.close();
 **Current State**: Fully functional with comprehensive test validation
 
 ### ✅ Completed
+
 - Complete MCP proxy implementation
 - Token optimization (85-90% savings demonstrated)
 - Child MCP discovery and management
@@ -379,27 +398,32 @@ await client.close();
 - Error handling and timeouts
 
 ### 🚀 Ready For
+
 - Production MCP deployments
 - Real-world child MCP integration
 - Token-conscious host applications
 - Multi-MCP aggregation scenarios
 
 ### 🔮 Future Enhancements
+
 Planned improvements for upcoming releases:
 
 #### v0.2.0: Auto-Discovery
+
 - **Automatic MCP Introspection**: `switchboard init --auto-discover` to automatically ping each MCP and extract real descriptions and tool lists
 - **Smart Description Generation**: Auto-generate `switchboardDescription` based on actual MCP metadata and available tools
 - **Validation Mode**: `switchboard validate` to check MCP health and suggest optimized descriptions
 - **Update Command**: `switchboard introspect` to refresh descriptions after MCP changes
 
 #### v0.3.0: Enhanced Configuration
+
 - **Flexible MCP Locations**: Support for `.mcp.json` files in different directories (not just root)
 - **Workspace Support**: Multi-project MCP discovery and management
 - **Environment-Specific Configs**: Different MCP sets for development/staging/production
 - **Import/Export**: Share MCP configurations across projects
 
 #### v0.4.0: Advanced Features
+
 - **MCP Health Monitoring**: Real-time status checking and error reporting
 - **Performance Analytics**: Token usage tracking and optimization suggestions
 - **Custom Suite Grouping**: Logical grouping of related MCPs into themed suites
@@ -416,7 +440,9 @@ Planned improvements for upcoming releases:
 7. Submit a pull request
 
 ### Commit Style
+
 Use [Conventional Commits](https://conventionalcommits.org/):
+
 - `feat:` new features
 - `fix:` bug fixes
 - `docs:` documentation changes
@@ -425,17 +451,20 @@ Use [Conventional Commits](https://conventionalcommits.org/):
 ### Development Resources
 
 **Comprehensive Documentation:**
+
 - **[Architecture](./docs/architecture.md)** - System design and data flow
 - **[Protocol Lessons](./docs/mcp-protocol-lessons.md)** - Insights from development
 - **[Troubleshooting](./docs/troubleshooting-guide.md)** - Solutions to common issues
 - **[Best Practices](./docs/mcp-best-practices.md)** - Guidelines for MCP development
 
 **Testing:**
+
 - Run `npm test` for full test suite
 - Use standalone testing for rapid iteration (see above)
 - See `docs/troubleshooting-guide.md` for debugging workflows
 
 **Key Fixes Implemented:**
+
 - ✅ Dual stdio protocol support (Content-Length + line-delimited)
 - ✅ inputSchema included in introspect responses
 - ✅ Protocol version updated to 2024-11-05
@@ -450,13 +479,14 @@ MIT © [Your Name]
 ## Why Switchboard?
 
 **Token Efficiency**: 85-90% reduction in MCP tool descriptions
-  - Memory MCP: 5,913 → 634 tokens (89% savings)
-  - Large MCPs like Supabase: 20,000+ → ~1,000 tokens (95%+ savings)
-  - Typical aggregate: 1,820+ → 200-300 tokens
+
+- Memory MCP: 5,913 → 634 tokens (89% savings)
+- Large MCPs like Supabase: 20,000+ → ~1,000 tokens (95%+ savings)
+- Typical aggregate: 1,820+ → 200-300 tokens
 
 **Clean Abstraction**: Host sees simple suite tools, not overwhelming tool lists
 **Lazy Loading**: Child MCPs only spawn when needed
 **Production Ready**: Comprehensive testing and error handling with real-world validation
 **Standards Compliant**: Built on the official `@modelcontextprotocol/sdk` for guaranteed standards compliance.
 
-*Switchboard transforms MCP from a "tool flooding" problem into a clean, token-efficient aggregation layer.* 🎯
+_Switchboard transforms MCP from a "tool flooding" problem into a clean, token-efficient aggregation layer._ 🎯

@@ -1,24 +1,21 @@
-import { mkdir, writeFile, existsSync, readFile, copyFile, rm } from 'fs';
+import { mkdir, writeFile, existsSync, readFile } from 'fs';
 import { join, dirname } from 'path';
 import { promisify } from 'util';
-import { globby } from 'globby';
 import { fileURLToPath } from 'url';
 
 const mkdirAsync = promisify(mkdir);
 const writeFileAsync = promisify(writeFile);
 const readFileAsync = promisify(readFile);
-const copyFileAsync = promisify(copyFile);
-const rmAsync = promisify(rm);
 
 async function getStandardDescriptions(): Promise<Record<string, string>> {
   // Try to load from mcp-descriptions.json file
   // This file should be in the package root after npm install
   const fallbackDescriptions = {
-    "memory": "Persistent memory storage for conversations and data across sessions",
-    "context7": "Smart context management and retrieval for enhanced LLM interactions",
-    "supabase": "Database operations and queries for Supabase projects",
-    "filesystem": "File system operations for reading, writing, and managing files",
-    "playwright": "Browser automation for web testing, scraping, and interaction",
+    memory: 'Persistent memory storage for conversations and data across sessions',
+    context7: 'Smart context management and retrieval for enhanced LLM interactions',
+    supabase: 'Database operations and queries for Supabase projects',
+    filesystem: 'File system operations for reading, writing, and managing files',
+    playwright: 'Browser automation for web testing, scraping, and interaction',
   };
 
   try {
@@ -48,7 +45,10 @@ async function getStandardDescriptions(): Promise<Record<string, string>> {
     console.warn('Warning: mcp-descriptions.json not found, using minimal fallback descriptions');
     return fallbackDescriptions;
   } catch (error) {
-    console.warn('Warning: Failed to load mcp-descriptions.json, using fallback descriptions:', error);
+    console.warn(
+      'Warning: Failed to load mcp-descriptions.json, using fallback descriptions:',
+      error,
+    );
     return fallbackDescriptions;
   }
 }
@@ -93,7 +93,10 @@ async function discoverExistingMcp(cwd: string): Promise<any | null> {
   }
 }
 
-function findMatchingDescription(mcpName: string, standardDescs: Record<string, string>): string | null {
+function findMatchingDescription(
+  mcpName: string,
+  standardDescs: Record<string, string>,
+): string | null {
   // Try exact match first
   if (standardDescs[mcpName]) {
     return standardDescs[mcpName];
@@ -134,7 +137,10 @@ function findMatchingDescription(mcpName: string, standardDescs: Record<string, 
   return null;
 }
 
-async function copyExistingMcps(existingConfig: any, switchboardDir: string): Promise<{ copiedMcps: string[], standardDescriptions: string[] }> {
+async function copyExistingMcps(
+  existingConfig: any,
+  switchboardDir: string,
+): Promise<{ copiedMcps: string[]; standardDescriptions: string[] }> {
   const mcpsDir = join(switchboardDir, 'mcps');
   const copiedMcps: string[] = [];
   const standardDescriptions: string[] = [];
@@ -159,12 +165,13 @@ async function copyExistingMcps(existingConfig: any, switchboardDir: string): Pr
     const transformedCommand = {
       cmd: (mcpConfig as any).command,
       args: (mcpConfig as any).args || [],
-      ...(((mcpConfig as any).env) && { env: (mcpConfig as any).env })
+      ...((mcpConfig as any).env && { env: (mcpConfig as any).env }),
     };
 
     // Use standard description if available, otherwise use placeholder
     const standardDesc = findMatchingDescription(mcpName, standardDescs);
-    const switchboardDescription = standardDesc || `describe what ${mcpName} does in one line for the LLM`;
+    const switchboardDescription =
+      standardDesc || `describe what ${mcpName} does in one line for the LLM`;
 
     if (standardDesc) {
       standardDescriptions.push(mcpName);
@@ -174,20 +181,16 @@ async function copyExistingMcps(existingConfig: any, switchboardDir: string): Pr
       name: mcpName,
       description: `${mcpName} MCP`,
       switchboardDescription,
-      command: transformedCommand
+      command: transformedCommand,
     };
 
-    await writeFileAsync(
-      join(mcpDir, '.mcp.json'),
-      JSON.stringify(mcpJsonContent, null, 2)
-    );
+    await writeFileAsync(join(mcpDir, '.mcp.json'), JSON.stringify(mcpJsonContent, null, 2));
 
     copiedMcps.push(mcpName);
   }
 
   return { copiedMcps, standardDescriptions };
 }
-
 
 export async function initSwitchboard(cwd: string): Promise<void> {
   const switchboardDir = join(cwd, '.switchboard');
@@ -202,11 +205,6 @@ export async function initSwitchboard(cwd: string): Promise<void> {
   try {
     // Discover existing .mcp.json
     const existingConfig = await discoverExistingMcp(cwd);
-    console.log('Debug: Found existing config:', existingConfig ? 'YES' : 'NO');
-    if (existingConfig) {
-      const mcpsSection = existingConfig.mcps || existingConfig.mcpServers;
-      console.log('Debug: MCPs in config:', Object.keys(mcpsSection || {}));
-    }
 
     // Create directory structure
     await mkdirAsync(switchboardDir, { recursive: true });
@@ -216,7 +214,6 @@ export async function initSwitchboard(cwd: string): Promise<void> {
     const { copiedMcps, standardDescriptions } = existingConfig
       ? await copyExistingMcps(existingConfig, switchboardDir)
       : { copiedMcps: [], standardDescriptions: [] };
-    console.log('Debug: Copied MCPs:', copiedMcps);
 
     // If no existing MCPs, create example
     if (copiedMcps.length === 0) {
@@ -224,7 +221,6 @@ export async function initSwitchboard(cwd: string): Promise<void> {
       await mkdirAsync(exampleMcpDir, { recursive: true });
       await writeFileAsync(join(exampleMcpDir, '.mcp.json'), TEMPLATE_MCP_JSON);
     }
-
 
     console.log('🎯 Switchboard initialized successfully!');
     console.log('');
@@ -252,9 +248,11 @@ export async function initSwitchboard(cwd: string): Promise<void> {
     console.log('');
     console.log('Next steps:');
     if (copiedMcps.length > 0) {
-      const needsEditing = copiedMcps.filter(name => !standardDescriptions.includes(name));
+      const needsEditing = copiedMcps.filter((name) => !standardDescriptions.includes(name));
       if (needsEditing.length > 0) {
-        console.log(`  1. Edit the "switchboardDescription" field for these MCPs: ${needsEditing.join(', ')}`);
+        console.log(
+          `  1. Edit the "switchboardDescription" field for these MCPs: ${needsEditing.join(', ')}`,
+        );
         console.log('     (these need custom one-line descriptions for the LLM)');
         console.log('  2. Replace your .mcp.json with this (copy/paste):');
       } else {
@@ -269,7 +267,9 @@ export async function initSwitchboard(cwd: string): Promise<void> {
     console.log('');
     console.log(generateTopLevelMcpTemplate(existingConfig));
     console.log('');
-    console.log(`  ${copiedMcps.length > 0 ? '3' : '4'}. Restart your MCP host (Claude Code, etc.)`);
+    console.log(
+      `  ${copiedMcps.length > 0 ? '3' : '4'}. Restart your MCP host (Claude Code, etc.)`,
+    );
     console.log('');
   } catch (error: any) {
     console.error('❌ Failed to initialize Switchboard:', error.message);

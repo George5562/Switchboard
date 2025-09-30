@@ -3,9 +3,7 @@ export function summarise(description, maxChars = 160) {
         return '';
     }
     // Clean up whitespace - replace multiple spaces/tabs/newlines with single space
-    const cleaned = description
-        .replace(/\s+/g, ' ')
-        .trim();
+    const cleaned = description.replace(/\s+/g, ' ').trim();
     if (cleaned.length <= maxChars) {
         return cleaned;
     }

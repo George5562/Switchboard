@@ -53,6 +53,7 @@ Switchboard is a **proxy MCP (Model Context Protocol) server** that aggregates m
 **Purpose:** Initialize the MCP server using the official SDK and register suite tools.
 
 **Key Functions:**
+
 - Create `McpServer` instance
 - Discover child MCPs via `listTopLevelTools()`
 - Register one tool per child MCP with the SDK
@@ -60,6 +61,7 @@ Switchboard is a **proxy MCP (Model Context Protocol) server** that aggregates m
 - Handle graceful shutdown
 
 **Flow:**
+
 ```typescript
 main()
   ↓
@@ -74,12 +76,13 @@ server.connect(transport)  // Start listening on stdio
 ```
 
 **Tool Handler:**
+
 ```typescript
 async (args, extra) => {
   // args = { action: 'introspect' | 'call', subtool?: string, args?: object }
   const result = await handleSuiteCall(tool.name, args, config);
-  return { content: [{ type: "text", text: JSON.stringify(result) }] };
-}
+  return { content: [{ type: 'text', text: JSON.stringify(result) }] };
+};
 ```
 
 ---
@@ -89,6 +92,7 @@ async (args, extra) => {
 **Purpose:** Load and validate user configuration from `switchboard.config.json`.
 
 **Schema:**
+
 ```typescript
 {
   discoverGlobs: string[];              // Patterns to find .mcp.json files
@@ -115,6 +119,7 @@ async (args, extra) => {
 ```
 
 **Defaults:**
+
 ```typescript
 {
   discoverGlobs: ['.switchboard/mcps/*/.mcp.json'],
@@ -137,6 +142,7 @@ async (args, extra) => {
 **Purpose:** Discover child MCPs by finding `.mcp.json` files and extract metadata.
 
 **Discovery Flow:**
+
 ```
 discoverGlobs
   ↓
@@ -151,21 +157,23 @@ build registry: { [name]: ChildMeta }
 ```
 
 **ChildMeta Structure:**
+
 ```typescript
 interface ChildMeta {
-  name: string;                   // e.g., "context7"
-  description?: string;           // MCP's self-description
+  name: string; // e.g., "context7"
+  description?: string; // MCP's self-description
   switchboardDescription?: string; // Description for suite tool
-  cwd: string;                    // Working directory
+  cwd: string; // Working directory
   command?: {
-    cmd: string;                  // e.g., "npx" or "node"
-    args?: string[];              // e.g., ["-y", "@upstash/context7-mcp"]
+    cmd: string; // e.g., "npx" or "node"
+    args?: string[]; // e.g., ["-y", "@upstash/context7-mcp"]
     env?: Record<string, string>; // Environment variables
   };
 }
 ```
 
 **Example `.mcp.json`:**
+
 ```json
 {
   "name": "context7",
@@ -194,6 +202,7 @@ interface ChildMeta {
 **Purpose:** Generate suite tool descriptors for MCP SDK registration.
 
 **Flow:**
+
 ```
 discover(config.discoverGlobs)
   ↓
@@ -206,22 +215,23 @@ return SuiteTool[]
 ```
 
 **Output:**
+
 ```typescript
 [
   {
-    name: "context7_suite",
-    description: "Smart context management and retrieval...",
+    name: 'context7_suite',
+    description: 'Smart context management and retrieval...',
     inputSchema: {
-      type: "object",
+      type: 'object',
       properties: {
-        action: { type: "string", enum: ["introspect", "call"] },
-        subtool: { type: "string" },
-        args: { type: "object" }
+        action: { type: 'string', enum: ['introspect', 'call'] },
+        subtool: { type: 'string' },
+        args: { type: 'object' },
       },
-      required: ["action"]
-    }
-  }
-]
+      required: ['action'],
+    },
+  },
+];
 ```
 
 #### `handleSuiteCall(toolName, params, config)`
@@ -229,6 +239,7 @@ return SuiteTool[]
 **Purpose:** Route `introspect` and `call` actions to the appropriate child MCP.
 
 **Flow for `introspect`:**
+
 ```
 Get/create ChildClient
   ↓
@@ -242,6 +253,7 @@ return { tools: [{ name, summary, inputSchema }] }
 ```
 
 **Flow for `call`:**
+
 ```
 Validate subtool provided
   ↓
@@ -255,6 +267,7 @@ return result
 ```
 
 **Child Client Lifecycle:**
+
 - **Lazy initialization:** Child process spawned on first use
 - **Reuse:** Same child instance used for subsequent calls
 - **Cleanup:** Closed on Switchboard shutdown
@@ -266,6 +279,7 @@ return result
 **Purpose:** Manage a single child MCP process and handle JSON-RPC communication over stdio.
 
 **Responsibilities:**
+
 - Spawn child process
 - Handle dual stdio protocols (Content-Length vs line-delimited)
 - Send JSON-RPC requests
@@ -277,16 +291,19 @@ return result
 #### Key Methods
 
 **`ensureStarted()`**
+
 - Spawn child process if not already running
 - Set up stdout/stderr handlers
 - Call `initialize()` if needed
 
 **`processBuffer()`**
+
 - Detect protocol type (Content-Length vs line-delimited)
 - Extract complete messages
 - Call `handleMessage()` for each
 
 **Dual Protocol Logic:**
+
 ```typescript
 if (buffer starts with "Content-Length:") {
   // Parse Content-Length: 123\r\n\r\n{...}
@@ -302,6 +319,7 @@ if (buffer starts with "Content-Length:") {
 ```
 
 **`send(method, params)`**
+
 - Generate unique request ID
 - Create JSON-RPC message
 - Write with Content-Length header (Switchboard always uses this)
@@ -309,6 +327,7 @@ if (buffer starts with "Content-Length:") {
 - Return promise that resolves when response arrives
 
 **`handleMessage(message)`**
+
 - Extract `id` from response
 - Look up pending request
 - Clear timeout
@@ -317,6 +336,7 @@ if (buffer starts with "Content-Length:") {
 #### JSON-RPC Message Format
 
 **Request (sent by Switchboard to child):**
+
 ```json
 Content-Length: 123\r\n\r\n
 {
@@ -330,6 +350,7 @@ Content-Length: 123\r\n\r\n
 **Response (from child to Switchboard):**
 
 Either:
+
 ```json
 Content-Length: 234\r\n\r\n
 {
@@ -340,6 +361,7 @@ Content-Length: 234\r\n\r\n
 ```
 
 Or (line-delimited):
+
 ```json
 {"jsonrpc":"2.0","id":1,"result":{"tools":[...]}}\n
 ```
@@ -348,12 +370,12 @@ Or (line-delimited):
 
 ```typescript
 class ChildClient {
-  private process?: ChildProcess;       // Spawned child
-  private buffer = Buffer.alloc(0);     // Incoming data buffer
-  private contentLength = -1;           // Expected Content-Length
-  private seq = 0;                      // Request ID sequence
-  private pending = Map<id, Promise>;   // Pending requests
-  private initialized = false;          // Has initialize() succeeded?
+  private process?: ChildProcess; // Spawned child
+  private buffer = Buffer.alloc(0); // Incoming data buffer
+  private contentLength = -1; // Expected Content-Length
+  private seq = 0; // Request ID sequence
+  private pending = Map<id, Promise>; // Pending requests
+  private initialized = false; // Has initialize() succeeded?
 }
 ```
 
@@ -364,6 +386,7 @@ class ChildClient {
 **Purpose:** Shorten tool descriptions to reduce token usage while preserving meaning.
 
 **Algorithm:**
+
 ```typescript
 function summarise(text: string, maxChars: number): string {
   if (text.length <= maxChars) return text;
@@ -381,6 +404,7 @@ function summarise(text: string, maxChars: number): string {
 ```
 
 **Example:**
+
 ```
 Input (350 chars):
 "Echoes back the input message to verify communication between host and child MCP. This is useful for testing the JSON-RPC protocol, verifying parameter passing, and ensuring that the stdio transport is working correctly in both directions."
@@ -409,6 +433,7 @@ Output (160 chars):
 ```
 
 **Token Comparison:**
+
 - **Without Switchboard:** 14 tools × 200 tokens = 2,800 tokens
 - **With Switchboard:** 3 suite tools × 50 tokens = 150 tokens
 - **Savings:** 95%
@@ -516,11 +541,13 @@ Output (160 chars):
 ## Performance Characteristics
 
 ### Startup
+
 - **Discovery:** ~100ms (glob + parse .mcp.json files)
 - **SDK initialization:** ~50ms
 - **Total:** ~150ms
 
 ### First Call to Child MCP
+
 - **Process spawn:** ~500ms
 - **npx download:** 0-30s (if not cached)
 - **Initialize handshake:** ~100ms
@@ -528,14 +555,16 @@ Output (160 chars):
 - **Total:** 0.7s - 31s
 
 ### Subsequent Calls
+
 - **Already spawned:** ~100ms (RPC roundtrip)
 
 ### Token Savings
-| Scenario | Without Switchboard | With Switchboard | Savings |
-|----------|---------------------|------------------|---------|
-| Tool listing | 14 tools × 200 tokens = 2,800 | 3 suites × 50 tokens = 150 | 95% |
-| After introspect | 2,800 | 150 + (2 tools × 150) = 450 | 84% |
-| Total workflow | 2,800 | 450 | 84% |
+
+| Scenario         | Without Switchboard           | With Switchboard            | Savings |
+| ---------------- | ----------------------------- | --------------------------- | ------- |
+| Tool listing     | 14 tools × 200 tokens = 2,800 | 3 suites × 50 tokens = 150  | 95%     |
+| After introspect | 2,800                         | 150 + (2 tools × 150) = 450 | 84%     |
+| Total workflow   | 2,800                         | 450                         | 84%     |
 
 **Average savings: 85-90%**
 
@@ -544,12 +573,14 @@ Output (160 chars):
 ## Error Handling
 
 ### Timeout Strategy
+
 ```
 childSpawnMs = 8000      // Time to spawn process
 rpcMs = 60000            // Time for RPC call (includes potential npx download)
 ```
 
 ### Error Propagation
+
 ```
 Child MCP error
   ↓
@@ -563,6 +594,7 @@ MCP SDK sends error response to host
 ```
 
 ### Process Cleanup
+
 ```
 Host disconnects
   ↓
@@ -590,20 +622,26 @@ for each ChildClient:
 ## Extension Points
 
 ### Adding Custom Routing Logic
+
 Override `handleSuiteCall()` in `router.ts` to add:
+
 - Authentication
 - Rate limiting
 - Caching
 - Request transformation
 
 ### Adding New Protocols
+
 Extend `processBuffer()` in `child.ts` to support:
+
 - WebSocket transport
 - HTTP transport
 - Custom framing
 
 ### Adding Telemetry
+
 Instrument:
+
 - `child.ts:send()` - Request timing
 - `child.ts:handleMessage()` - Response timing
 - `router.ts:handleSuiteCall()` - Action metrics
@@ -613,12 +651,15 @@ Instrument:
 ## Future Architecture Changes
 
 ### Planned: Connection Pooling
+
 Instead of keeping all child processes alive:
+
 - Spawn on demand
 - Kill after idle timeout
 - Reuse recently-used processes
 
 ### Planned: Multi-Transport Support
+
 ```
 Host
  ↓
@@ -629,6 +670,7 @@ Switchboard
 ```
 
 ### Considered: Parallel Introspection
+
 Currently: introspect one child at a time
 Future: introspect all children in parallel for faster startup
 
@@ -637,6 +679,7 @@ Future: introspect all children in parallel for faster startup
 ## Summary
 
 Switchboard's architecture is designed for:
+
 - **Simplicity:** Minimal layers between host and child
 - **Efficiency:** Lazy loading and token optimization
 - **Compatibility:** Dual protocol support

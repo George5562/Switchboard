@@ -18,7 +18,7 @@ describe('getConfig', () => {
             discoverGlobs: ['.switchboard/mcps/*/.mcp.json'],
             suites: {},
             timeouts: { childSpawnMs: 8000, rpcMs: 60000 },
-            introspection: { mode: 'summary', summaryMaxChars: 160 }
+            introspection: { mode: 'summary', summaryMaxChars: 160 },
         });
     });
     it('loads and validates JSON config file', async () => {
@@ -27,9 +27,9 @@ describe('getConfig', () => {
             suites: {
                 test: {
                     suiteName: 'test_custom',
-                    description: 'Test suite'
-                }
-            }
+                    description: 'Test suite',
+                },
+            },
         };
         mockedFs.existsSync.mockImplementation((path) => {
             return path.toString().endsWith('switchboard.config.json');

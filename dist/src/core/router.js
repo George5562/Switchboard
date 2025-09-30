@@ -20,17 +20,17 @@ export async function listTopLevelTools(config) {
                 properties: {
                     action: {
                         type: 'string',
-                        enum: ['introspect', 'call']
+                        enum: ['introspect', 'call'],
                     },
                     subtool: {
-                        type: 'string'
+                        type: 'string',
                     },
                     args: {
-                        type: 'object'
-                    }
+                        type: 'object',
+                    },
                 },
-                required: ['action']
-            }
+                required: ['action'],
+            },
         });
     }
     return tools;
@@ -82,16 +82,15 @@ export async function handleSuiteCall(toolName, params, config) {
         // Get tools from child
         const tools = await client.listTools();
         // Filter based on allow/deny
-        const filteredTools = tools.filter(tool => isToolAllowed(tool.name, config, childName));
+        const filteredTools = tools.filter((tool) => isToolAllowed(tool.name, config, childName));
         // Return summarized descriptions
-        const maxChars = config.suites[childName]?.summaryMaxChars ||
-            config.introspection.summaryMaxChars;
+        const maxChars = config.suites[childName]?.summaryMaxChars || config.introspection.summaryMaxChars;
         return {
-            tools: filteredTools.map(tool => ({
+            tools: filteredTools.map((tool) => ({
                 name: tool.name,
                 summary: summarise(tool.description, maxChars),
-                inputSchema: tool.inputSchema
-            }))
+                inputSchema: tool.inputSchema,
+            })),
         };
     }
     else if (action === 'call') {

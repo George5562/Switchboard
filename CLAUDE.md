@@ -1,8 +1,8 @@
-
 ````markdown
 # Switchboard — Project Overview
 
 ## What this project is
+
 Switchboard is a **proxy MCP (Model Context Protocol) implementation**.  
 It presents itself to an MCP host as a single stdio MCP binary, but internally it acts as a **switchboard operator**:
 
@@ -17,6 +17,7 @@ This saves tokens/context, improves clarity, and gives users a clean abstraction
 ---
 
 ## Language & Tooling
+
 - **Language**: TypeScript (Node.js, ECMAScript modules).
 - **Runtime**: Node.js v18+.
 - **Build Tool**: [esbuild](https://esbuild.github.io/) bundles `src/index.ts` into a single JS file in `dist/`.
@@ -25,13 +26,16 @@ This saves tokens/context, improves clarity, and gives users a clean abstraction
 ---
 
 ## Libraries
+
 Core dependencies:
+
 - **[zod](https://github.com/colinhacks/zod)** → config schema validation.
 - **[ajv](https://ajv.js.org/)** → JSON Schema validation (for validating subtool arguments).
 - **[globby](https://github.com/sindresorhus/globby)** → discover child MCP `.mcp.json` files.
 - **[read-pkg-up](https://github.com/sindresorhus/read-pkg-up)** → package metadata (optional).
 
 Dev & tooling:
+
 - **[typescript](https://www.typescriptlang.org/)**
 - **[ts-node](https://typestrong.org/ts-node/)**
 - **[vitest](https://vitest.dev/)**
@@ -42,6 +46,7 @@ Dev & tooling:
 ---
 
 ## Key Files
+
 - `src/rpc/stdio.ts` → JSON-RPC framing (`Content-Length` headers).
 - `src/core/config.ts` → loads & validates `switchboard.config.json`.
 - `src/core/registry.ts` → discovers child MCPs and caches metadata.
@@ -52,7 +57,9 @@ Dev & tooling:
 ---
 
 ## Protocol Support
+
 Switchboard responds to host JSON-RPC methods:
+
 - `initialize` → returns `{ name: "switchboard", capabilities: {} }`.
 - `tools/list` → returns **one suite tool per child MCP**.
 - `tools/call`:
@@ -60,6 +67,7 @@ Switchboard responds to host JSON-RPC methods:
   - `"call"` → forward to a specific subtool of a child MCP.
 
 Internally, Switchboard speaks the same to children:
+
 - `initialize`
 - `tools/list`
 - `tools/call`
@@ -67,6 +75,7 @@ Internally, Switchboard speaks the same to children:
 ---
 
 ## Config
+
 Optional `switchboard.config.json` (root of the project):
 
 ```json
@@ -83,6 +92,7 @@ Optional `switchboard.config.json` (root of the project):
   },
   "timeouts": { "childSpawnMs": 8000, "rpcMs": 60000 }
 }
+```
 ````
 
 ---
@@ -91,27 +101,25 @@ Optional `switchboard.config.json` (root of the project):
 
 1. Host runs `switchboard` as a stdio MCP.
 2. Host calls `tools/list`:
+   - Switchboard returns `[ { name: "playwright_suite", ... } ]`.
 
-   * Switchboard returns `[ { name: "playwright_suite", ... } ]`.
 3. Host calls `tools/call` with `{ action: "introspect" }`:
+   - Switchboard spawns Playwright MCP.
+   - Returns compact list of subtools (`click`, `launch`, etc.).
 
-   * Switchboard spawns Playwright MCP.
-   * Returns compact list of subtools (`click`, `launch`, etc.).
 4. Host calls `tools/call` with `{ action: "call", subtool: "click", args: {...} }`:
-
-   * Switchboard forwards the call.
-   * Returns child’s result.
+   - Switchboard forwards the call.
+   - Returns child’s result.
 
 ---
 
 ## Testing (traditional)
 
-* **Unit tests**: framing, config, summarising.
-* **E2E tests**: spawn a **mock child MCP** (`examples/mock-child`) and verify:
-
-  * `tools/list` → only suite tools.
-  * `introspect` → summaries.
-  * `call` → forwards to mock child.
+- **Unit tests**: framing, config, summarising.
+- **E2E tests**: spawn a **mock child MCP** (`examples/mock-child`) and verify:
+  - `tools/list` → only suite tools.
+  - `introspect` → summaries.
+  - `call` → forwards to mock child.
 
 ---
 
@@ -120,22 +128,21 @@ Optional `switchboard.config.json` (root of the project):
 If you, the LLM assistant, have restarted and can **attach to MCPs directly**, you can test Switchboard yourself:
 
 1. **Register Switchboard** with your MCP runtime:
-
-   * Command: `switchboard` (from npm bin, e.g. `npx switchboard`).
-   * Mode: stdio.
+   - Command: `switchboard` (from npm bin, e.g. `npx switchboard`).
+   - Mode: stdio.
 
 2. **Run protocol checks**:
-
-   * Call `initialize` → expect `{ name: "switchboard" }`.
-   * Call `tools/list` → expect only suite tools like `playwright_suite`.
-   * Call `tools/call` with:
+   - Call `initialize` → expect `{ name: "switchboard" }`.
+   - Call `tools/list` → expect only suite tools like `playwright_suite`.
+   - Call `tools/call` with:
 
      ```json
      { "action": "introspect" }
      ```
 
      → expect a list of child subtools with `summary` fields **and `inputSchema`**.
-   * Call `tools/call` with:
+
+   - Call `tools/call` with:
 
      ```json
      { "action": "call", "subtool": "click", "args": { "selector": "#btn" } }
@@ -144,14 +151,12 @@ If you, the LLM assistant, have restarted and can **attach to MCPs directly**, y
      → expect the child MCP's response (mock child will echo).
 
 3. **Verify token savings**:
-
-   * Compare host's token usage when using Switchboard (one short description per suite) versus raw child MCP (20+ long descriptions).
-   * You should see a significant reduction.
+   - Compare host's token usage when using Switchboard (one short description per suite) versus raw child MCP (20+ long descriptions).
+   - You should see a significant reduction.
 
 4. **Try variations**:
-
-   * Add a `switchboard.config.json` that sets `expose.allow` to only a few subtools.
-   * Run `introspect` again → confirm only allowed subtools appear.
+   - Add a `switchboard.config.json` that sets `expose.allow` to only a few subtools.
+   - Run `introspect` again → confirm only allowed subtools appear.
 
 ---
 
@@ -162,6 +167,7 @@ If you, the LLM assistant, have restarted and can **attach to MCPs directly**, y
 **IMPORTANT**: When you make code changes to Switchboard, the MCP host (Claude Code, etc.) caches the running instance. Your changes **will not take effect** until the host restarts, even after rebuilding.
 
 **Symptoms:**
+
 - You rebuild with `npm run build`
 - Try to test via your direct MCP access (e.g., calling `mcp__switchboard__context7_suite`)
 - Old behavior persists
@@ -176,11 +182,13 @@ If you, the LLM assistant, have restarted and can **attach to MCPs directly**, y
 1. **Make code changes** (e.g., fix a bug, add a feature)
 
 2. **Rebuild:**
+
    ```bash
    npm run build
    ```
 
 3. **Launch a sub-agent to test:**
+
    ```markdown
    Use the Task tool with subagent_type: "general-purpose"
 
@@ -190,6 +198,7 @@ If you, the LLM assistant, have restarted and can **attach to MCPs directly**, y
    after [describe changes]. The main session has a stale MCP connection, but you have fresh access.
 
    Your task:
+
    1. Run /mcp list to confirm switchboard is available
    2. Test [specific functionality]
    3. Verify [expected behavior]
@@ -215,7 +224,7 @@ async function testSwitchboard() {
   const transport = new StdioClientTransport({
     command: './dist/switchboard',
     args: [],
-    stderr: 'inherit'
+    stderr: 'inherit',
   });
 
   await client.connect(transport);
@@ -224,7 +233,7 @@ async function testSwitchboard() {
   const tools = (await client.listTools()).tools;
   const introspect = await client.callTool({
     name: tools[0].name,
-    arguments: { action: 'introspect' }
+    arguments: { action: 'introspect' },
   });
 
   console.log('Introspect result:', JSON.stringify(introspect, null, 2));
@@ -260,11 +269,12 @@ When you modify Switchboard code:
 
 Switchboard is:
 
-* A **stdio MCP binary**.
-* A **router/proxy** for multiple child MCPs.
-* Provides **lazy subtool exposure**.
-* Built in **TypeScript**, bundled with **esbuild**, tested with **Vitest**, released with **semantic-release**.
-* **Testable both traditionally (npm test) and interactively by an LLM** via MCP access.
+- A **stdio MCP binary**.
+- A **router/proxy** for multiple child MCPs.
+- Provides **lazy subtool exposure**.
+- Built in **TypeScript**, bundled with **esbuild**, tested with **Vitest**, released with **semantic-release**.
+- **Testable both traditionally (npm test) and interactively by an LLM** via MCP access.
 
 ```
 
+```

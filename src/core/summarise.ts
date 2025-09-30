@@ -4,9 +4,7 @@ export function summarise(description: string | undefined, maxChars: number = 16
   }
 
   // Clean up whitespace - replace multiple spaces/tabs/newlines with single space
-  const cleaned = description
-    .replace(/\s+/g, ' ')
-    .trim();
+  const cleaned = description.replace(/\s+/g, ' ').trim();
 
   if (cleaned.length <= maxChars) {
     return cleaned;
