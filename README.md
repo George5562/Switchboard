@@ -1,15 +1,11 @@
 # Switchboard
 
-> **MCP proxy that eliminates tool flooding: one suite per MCP, 85-90% token savings.**
-
 [![npm version](https://img.shields.io/npm/v/@george5562/switchboard)](https://www.npmjs.com/package/@george5562/switchboard)
 [![Tests](https://img.shields.io/badge/tests-15%2F15%20passing-brightgreen)](./test/)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org/)
 [![License](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
 
-Switchboard aggregates multiple child MCPs into suite tools with lazy subtool expansion. Instead of flooding your LLM with dozens of tools, it presents one tool per MCP and reveals subtools on demand.
-
-**Token Savings**: Memory MCP: 5,913 → 634 tokens (89% reduction). Large MCPs like Supabase save 20,000+ tokens.
+MCP proxy that aggregates multiple child MCPs into suite tools with lazy subtool expansion. Presents one tool per MCP to the host, revealing subtools on demand. Typical token reduction: 85-90%. Memory MCP: 5,913 → 634 tokens (89%). Large MCPs like Supabase save 20,000+ tokens.
 
 ---
 
@@ -25,7 +21,7 @@ Or use directly without installation:
 npx @george5562/switchboard init
 ```
 
-**Requirements**: Node.js v18+
+Requirements: Node.js v18+
 
 ---
 
@@ -60,32 +56,11 @@ Migrates existing `.mcp.json` and creates `.switchboard/mcps/[name]/.mcp.json` f
 }
 ```
 
-**4. Restart MCP host** (Claude Code, Cursor, etc.)
+4. Restart MCP host (Claude Code, Cursor, etc.)
 
 ---
 
-## Why Switchboard?
-
-### The Problem
-
-```
-❌ Without Switchboard:
-Host sees: memory_create_entities, memory_create_relations, memory_add_observations...
-Result: 9 tools × ~630 tokens each = 5,913 tokens
-(Supabase and other large MCPs can reach 20,000+ tokens!)
-```
-
-### The Solution
-
-```
-✅ With Switchboard:
-Host sees: memory_suite (634 tokens)
-On demand: { action: "introspect" } → shows 9 subtools
-On use: { action: "call", subtool: "create_entities", args: {...} } → executes
-Result: 89% token savings!
-```
-
-### How It Works
+## How It Works
 
 ```
 Host ──JSON-RPC(stdio)──> Switchboard
@@ -101,14 +76,14 @@ Host ──JSON-RPC(stdio)──> Switchboard
 
 ## Features
 
-- **85-90% Token Reduction** - Exponentially reduces context usage
-- **Zero Config** - Works out of the box with sensible defaults
-- **Auto-Migration** - `switchboard init` migrates existing MCPs
-- **Smart Descriptions** - Auto-populates descriptions for 50+ common MCPs
-- **Production Ready** - Comprehensive test suite (15/15 passing)
-- **Protocol Compliant** - Built on official `@modelcontextprotocol/sdk`
-- **Lazy Initialization** - Child MCPs spawn only when used
-- **Clean Abstractions** - Host sees simple suite tools, not tool spam
+- 85-90% token reduction through lazy subtool expansion
+- Zero-config operation with sensible defaults
+- Auto-migration via `switchboard init`
+- Auto-populated descriptions for 50+ common MCPs
+- Comprehensive test suite (15/15 passing)
+- Built on official `@modelcontextprotocol/sdk`
+- Lazy child MCP initialization
+- Single suite tool per MCP presented to host
 
 ---
 
@@ -138,7 +113,7 @@ Each suite tool accepts:
 }
 ```
 
-**Introspect** - Discover available subtools:
+Introspect - Discover available subtools:
 
 ```javascript
 {
@@ -147,7 +122,7 @@ Each suite tool accepts:
 // Returns: [{ name: "click", summary: "Click element", inputSchema: {...} }, ...]
 ```
 
-**Call** - Execute a specific subtool:
+Call - Execute a specific subtool:
 
 ```javascript
 {
@@ -202,18 +177,18 @@ switchboard group supabase_suite    # Auto-creates groups
 
 ### v0.4.0: Dynamic MCP Discovery
 
-LLM discovers and loads MCPs on-demand from a global registry. Integration with [1MCP](https://github.com/1mcp/1mcp):
+On-demand MCP loading from a global registry. Integration with [1MCP](https://github.com/1mcp/1mcp):
 
 ```
-LLM: "I need to query a database"
+LLM requests database functionality
   ↓
-Switchboard Index: "Here are database-related MCP suites"
+Switchboard Index returns database-related MCP suites
   ↓
-LLM selects: supabase_suite
+LLM selects supabase_suite
   ↓
-Switchboard: Downloads, spawns, and connects Supabase MCP
+Switchboard downloads, spawns, and connects Supabase MCP
   ↓
-LLM: Uses Supabase tools
+LLM uses Supabase tools
 ```
 
 - Curated index of 100+ MCPs by use case
@@ -229,14 +204,14 @@ switchboard discover        # Enable dynamic discovery mode
 switchboard install github  # Pre-install common MCPs
 ```
 
-Example flow:
+Flow:
 
 1. Host loads `switchboard_index`
-2. LLM introspects: "Show me database MCPs"
-3. Switchboard returns: [supabase, postgres, mongodb, ...]
-4. LLM calls: `{ action: "load", mcp: "supabase" }`
+2. LLM introspects database MCPs
+3. Switchboard returns [supabase, postgres, mongodb, ...]
+4. LLM calls `{ action: "load", mcp: "supabase" }`
 5. Switchboard spawns Supabase MCP and returns `supabase_suite`
-6. LLM uses tools normally
+6. LLM uses tools
 
 ### v0.5.0+: Advanced Features
 
@@ -347,4 +322,4 @@ Built with:
 
 ---
 
-_Switchboard transforms MCP from a "tool flooding" problem into a clean, token-efficient aggregation layer._
+Switchboard transforms MCP from a tool flooding problem into a token-efficient aggregation layer.
