@@ -1,9 +1,0 @@
-{
-  "name": "memory",
-  "description": "memory MCP",
-  "switchboardDescription": "Persistent memory storage for conversations and data across sessions",
-  "command": {
-    "cmd": "npx",
-    "args": ["-y", "@modelcontextprotocol/server-memory"]
-  }
-}

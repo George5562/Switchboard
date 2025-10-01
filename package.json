@@ -1,5 +1,5 @@
 {
-  "name": "switchboard",
+  "name": "@george5562/switchboard",
   "version": "0.1.0",
   "description": "Stdio proxy MCP: one top-level tool per MCP, lazy subtool expansion.",
   "keywords": [
@@ -17,15 +17,18 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/George5562/Switchboard.git"
+    "url": "git+https://github.com/George5562/Switchboard.git"
   },
   "bugs": {
     "url": "https://github.com/George5562/Switchboard/issues"
   },
   "homepage": "https://github.com/George5562/Switchboard#readme",
+  "publishConfig": {
+    "access": "public"
+  },
   "type": "module",
   "bin": {
-    "switchboard": "./dist/switchboard"
+    "switchboard": "dist/switchboard"
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

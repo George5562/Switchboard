@@ -14,3 +14,16 @@ debug.log
 stderr.log
 verify-inputschema.js
 test-spawn.js
+
+# Personal IDE settings
+.claude/
+.gemini/
+.cursor/
+
+# Local development configs
+.mcp.json
+.switchboard/
+switchboard.config.json
+
+# Personal notes
+CLAUDE.md
