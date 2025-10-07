@@ -1,0 +1,9 @@
+{
+  "name": "mock",
+  "description": "Mock MCP for testing",
+  "switchboardDescription": "Provides a simple echo tool for Switchboard tests.",
+  "command": {
+    "cmd": "node",
+    "args": ["../../../test/mock-mcp.mjs"]
+  }
+}

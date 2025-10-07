@@ -23,6 +23,9 @@ test-spawn.js
 # Local development configs
 .mcp.json
 .switchboard/
+!.switchboard/mcps/
+!.switchboard/mcps/mock/
+!.switchboard/mcps/mock/.mcp.json
 switchboard.config.json
 
 # Personal notes
