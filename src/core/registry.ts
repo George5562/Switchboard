@@ -7,6 +7,7 @@ export interface ChildMeta {
   description?: string;
   switchboardDescription?: string;
   cwd: string;
+  type?: 'stdio' | 'claude-server'; // Type of child MCP
   command?: {
     cmd: string;
     args?: string[];
@@ -39,6 +40,7 @@ export async function discover(globs: string[]): Promise<Record<string, ChildMet
         name: config.name,
         description: config.description,
         switchboardDescription: config.switchboardDescription,
+        type: config.type || 'stdio',
         cwd: dirname(resolve(file)),
         command: config.command,
       };

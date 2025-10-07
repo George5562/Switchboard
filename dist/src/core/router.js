@@ -1,128 +1,142 @@
 import { discover } from './registry.js';
-import { ChildClient } from './child.js';
+import { ChildClient, ClaudeChildClient } from './child.js';
 import { summarise } from './summarise.js';
 const childClients = new Map();
 export async function listTopLevelTools(config) {
-  const registry = await discover(config.discoverGlobs);
-  const tools = [];
-  for (const [childName, meta] of Object.entries(registry)) {
-    const suiteConfig = config.suites[childName];
-    const suiteName = suiteConfig?.suiteName || `${childName}_suite`;
-    // Use switchboardDescription first, then suite config, then fallback
-    const description =
-      meta.switchboardDescription ||
-      suiteConfig?.description ||
-      `Use this tool for ${meta.description || childName}. Actions: 'introspect' | 'call'`;
-    tools.push({
-      name: suiteName,
-      description,
-      inputSchema: {
-        type: 'object',
-        properties: {
-          action: {
-            type: 'string',
-            enum: ['introspect', 'call'],
-          },
-          subtool: {
-            type: 'string',
-          },
-          args: {
-            type: 'object',
-          },
-        },
-        required: ['action'],
-      },
-    });
-  }
-  return tools;
+    const registry = await discover(config.discoverGlobs);
+    const tools = [];
+    for (const [childName, meta] of Object.entries(registry)) {
+        const suiteConfig = config.suites[childName];
+        const suiteName = suiteConfig?.suiteName || `${childName}_suite`;
+        // Use switchboardDescription first, then suite config, then fallback
+        const description = meta.switchboardDescription ||
+            suiteConfig?.description ||
+            `Use this tool for ${meta.description || childName}. Actions: 'introspect' | 'call'`;
+        tools.push({
+            name: suiteName,
+            description,
+            inputSchema: {
+                type: 'object',
+                properties: {
+                    action: {
+                        type: 'string',
+                        enum: ['introspect', 'call'],
+                    },
+                    subtool: {
+                        type: 'string',
+                    },
+                    args: {
+                        type: 'object',
+                    },
+                },
+                required: ['action'],
+            },
+        });
+    }
+    return tools;
 }
 function getChildNameFromToolName(toolName, config) {
-  // First check if any suite has this as their custom suiteName
-  for (const [childName, suiteConfig] of Object.entries(config.suites)) {
-    if (suiteConfig.suiteName === toolName) {
-      return childName;
+    // First check if any suite has this as their custom suiteName
+    for (const [childName, suiteConfig] of Object.entries(config.suites)) {
+        if (suiteConfig.suiteName === toolName) {
+            return childName;
+        }
     }
-  }
-  // Otherwise strip _suite suffix
-  if (toolName.endsWith('_suite')) {
-    return toolName.slice(0, -6);
-  }
-  return null;
+    // Otherwise strip _suite suffix
+    if (toolName.endsWith('_suite')) {
+        return toolName.slice(0, -6);
+    }
+    return null;
 }
 function isToolAllowed(toolName, config, childName) {
-  const suiteConfig = config.suites[childName];
-  if (!suiteConfig?.expose) return true;
-  const { allow, deny } = suiteConfig.expose;
-  if (deny && deny.includes(toolName)) {
-    return false;
-  }
-  if (allow && !allow.includes(toolName)) {
-    return false;
-  }
-  return true;
+    const suiteConfig = config.suites[childName];
+    if (!suiteConfig?.expose)
+        return true;
+    const { allow, deny } = suiteConfig.expose;
+    if (deny && deny.includes(toolName)) {
+        return false;
+    }
+    if (allow && !allow.includes(toolName)) {
+        return false;
+    }
+    return true;
 }
 export async function handleSuiteCall(toolName, params, config) {
-  const childName = getChildNameFromToolName(toolName, config);
-  if (!childName) {
-    throw new Error(`Unknown suite tool: ${toolName}`);
-  }
-  const registry = await discover(config.discoverGlobs);
-  const meta = registry[childName];
-  if (!meta) {
-    throw new Error(`Child MCP not found: ${childName}`);
-  }
-  const { action, subtool, args } = params;
-  if (action === 'introspect') {
-    // Get or create child client
-    let client = childClients.get(childName);
-    if (!client) {
-      client = new ChildClient(meta, config.timeouts.rpcMs);
-      childClients.set(childName, client);
+    const childName = getChildNameFromToolName(toolName, config);
+    if (!childName) {
+        throw new Error(`Unknown suite tool: ${toolName}`);
     }
-    // Get tools from child
-    const tools = await client.listTools();
-    // Filter based on allow/deny
-    const filteredTools = tools.filter((tool) => isToolAllowed(tool.name, config, childName));
-    // Return summarized descriptions
-    const maxChars =
-      config.suites[childName]?.summaryMaxChars || config.introspection.summaryMaxChars;
-    return {
-      tools: filteredTools.map((tool) => ({
-        name: tool.name,
-        summary: summarise(tool.description, maxChars),
-        inputSchema: tool.inputSchema,
-      })),
-    };
-  } else if (action === 'call') {
-    if (!subtool) {
-      throw new Error('Missing required parameter: subtool');
+    const registry = await discover(config.discoverGlobs);
+    const meta = registry[childName];
+    if (!meta) {
+        throw new Error(`Child MCP not found: ${childName}`);
     }
-    // Check if subtool is allowed
-    if (!isToolAllowed(subtool, config, childName)) {
-      throw new Error(`Subtool '${subtool}' not allowed by Switchboard (suite '${childName}')`);
+    const { action, subtool, args } = params;
+    if (action === 'introspect') {
+        // Get or create child client
+        let client = childClients.get(childName);
+        if (!client) {
+            // Use ClaudeChildClient for claude-server types
+            if (meta.type === 'claude-server') {
+                const idleTimeoutMs = Number(process.env.SWITCHBOARD_CHILD_IDLE_MS || 300000);
+                client = new ClaudeChildClient(meta, config.timeouts.rpcMs, idleTimeoutMs);
+            }
+            else {
+                client = new ChildClient(meta, config.timeouts.rpcMs);
+            }
+            childClients.set(childName, client);
+        }
+        // Get tools from child
+        const tools = await client.listTools();
+        // Filter based on allow/deny
+        const filteredTools = tools.filter((tool) => isToolAllowed(tool.name, config, childName));
+        // Return summarized descriptions
+        const maxChars = config.suites[childName]?.summaryMaxChars || config.introspection.summaryMaxChars;
+        return {
+            tools: filteredTools.map((tool) => ({
+                name: tool.name,
+                summary: summarise(tool.description, maxChars),
+                inputSchema: tool.inputSchema,
+            })),
+        };
     }
-    // Get or create child client
-    let client = childClients.get(childName);
-    if (!client) {
-      client = new ChildClient(meta, config.timeouts.rpcMs);
-      childClients.set(childName, client);
+    else if (action === 'call') {
+        if (!subtool) {
+            throw new Error('Missing required parameter: subtool');
+        }
+        // Check if subtool is allowed
+        if (!isToolAllowed(subtool, config, childName)) {
+            throw new Error(`Subtool '${subtool}' not allowed by Switchboard (suite '${childName}')`);
+        }
+        // Get or create child client
+        let client = childClients.get(childName);
+        if (!client) {
+            // Use ClaudeChildClient for claude-server types
+            if (meta.type === 'claude-server') {
+                const idleTimeoutMs = Number(process.env.SWITCHBOARD_CHILD_IDLE_MS || 300000);
+                client = new ClaudeChildClient(meta, config.timeouts.rpcMs, idleTimeoutMs);
+            }
+            else {
+                client = new ChildClient(meta, config.timeouts.rpcMs);
+            }
+            childClients.set(childName, client);
+        }
+        // Forward the call to the child
+        try {
+            return await client.callTool(subtool, args || {});
+        }
+        catch (error) {
+            throw new Error(`Failed to call subtool '${subtool}' on child '${childName}': ${error.message}`);
+        }
     }
-    // Forward the call to the child
-    try {
-      return await client.callTool(subtool, args || {});
-    } catch (error) {
-      throw new Error(
-        `Failed to call subtool '${subtool}' on child '${childName}': ${error.message}`,
-      );
+    else {
+        throw new Error(`Unknown action: ${action}. Must be 'introspect' or 'call'`);
     }
-  } else {
-    throw new Error(`Unknown action: ${action}. Must be 'introspect' or 'call'`);
-  }
 }
 export function closeAllClients() {
-  for (const client of childClients.values()) {
-    client.close();
-  }
-  childClients.clear();
+    for (const client of childClients.values()) {
+        client.close();
+    }
+    childClients.clear();
 }
 //# sourceMappingURL=router.js.map

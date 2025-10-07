@@ -1,9 +1,0 @@
-{
-  "mcpServers": {
-    "switchboard": {
-      "command": "switchboard",
-      "args": [],
-      "env": {}
-    }
-  }
-}

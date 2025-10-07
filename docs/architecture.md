@@ -619,6 +619,114 @@ for each ChildClient:
 
 ---
 
+## Claude Intelligent Wrapper Architecture
+
+Switchboard optionally provides a Claude-powered natural language interface for MCPs through intelligent wrappers.
+
+### Directory Structure
+
+When Claude wrappers are enabled:
+
+```
+.switchboard/mcps/memory/
+├── .mcp.json                    # Points to wrapper script
+├── CLAUDE.md                    # Role instructions for Claude
+├── memory-claude-wrapper.mjs    # MCP server wrapping the original
+└── original/
+    └── .mcp.json               # Original MCP configuration
+```
+
+### Architecture Flow
+
+```
+┌─────────────┐
+│  Main       │  natural_language query:
+│  Claude     │  "remember my API key is xyz"
+│  Instance   │
+└──────┬──────┘
+       │ Calls memory_suite with:
+       │ { action: "call", subtool: "natural_language",
+       │   args: { query: "remember my API key..." } }
+       ▼
+┌─────────────────────────────────────────────┐
+│           Switchboard                        │
+│  Routes to memory-claude-wrapper.mjs        │
+└──────┬──────────────────────────────────────┘
+       │ Spawns wrapper as MCP server
+       ▼
+┌─────────────────────────────────────────────┐
+│     memory-claude-wrapper.mjs               │
+│  ┌────────────────────────────────┐        │
+│  │  Sub-Claude Instance           │        │
+│  │  - Reads CLAUDE.md for context │        │
+│  │  - Parses user query           │        │
+│  │  - Calls Anthropic API         │        │
+│  └────────┬───────────────────────┘        │
+│           │ Returns:                        │
+│           │ { subtool: "store_entity",      │
+│           │   args: { key: "api_key",       │
+│           │           value: "xyz" } }      │
+│           ▼                                  │
+│  ┌────────────────────────────────┐        │
+│  │  ChildClient                   │        │
+│  │  - Spawns original memory MCP  │        │
+│  │  - Calls: store_entity         │        │
+│  └────────┬───────────────────────┘        │
+└───────────┼─────────────────────────────────┘
+            │
+            ▼
+     ┌──────────────┐
+     │ Original     │
+     │ Memory MCP   │
+     └──────────────┘
+```
+
+### Components
+
+**1. CLAUDE.md**
+- Contains role-specific instructions for the wrapper Claude instance
+- Loaded from `mcp-descriptions.json` with `claude` key
+- Provides context on the MCP's purpose and capabilities
+
+**2. Wrapper Script** (`*-claude-wrapper.mjs`)
+- Standalone MCP server using `@modelcontextprotocol/sdk`
+- Exposes single `natural_language` tool
+- Spawns and manages original child MCP
+- Calls Anthropic API to interpret queries
+- Maps natural language to MCP operations
+
+**3. ChildClient** (within wrapper)
+- JSON-RPC client for communicating with original MCP
+- Handles stdio protocol, buffering, message framing
+- Manages child process lifecycle
+
+### Configuration Files
+
+**mcp-descriptions.json:**
+```json
+{
+  "mcps": {
+    "memory": {
+      "switchboard": "Use this tool to store and retrieve memory",
+      "claude": "Your role is to use this MCP server to store and retrieve memory across sessions..."
+    }
+  }
+}
+```
+
+- `switchboard`: Brief description for main Claude instance
+- `claude`: Detailed instructions for wrapper Claude instance
+
+### Token Efficiency
+
+Claude wrappers add overhead but provide better UX:
+
+- **Without wrapper**: Main Claude must learn all MCP subtools
+- **With wrapper**: Main Claude sends natural language; wrapper Claude handles details
+- **Trade-off**: Extra API call but simpler mental model for users
+
+---
+
 ## Extension Points
 
 ### Adding Custom Routing Logic
@@ -645,6 +753,7 @@ Instrument:
 - `child.ts:send()` - Request timing
 - `child.ts:handleMessage()` - Response timing
 - `router.ts:handleSuiteCall()` - Action metrics
+- Claude wrapper API calls and response times
 
 ---
 

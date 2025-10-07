@@ -7,12 +7,22 @@ import { z } from 'zod';
 import { getConfig } from './core/config.js';
 import { listTopLevelTools, handleSuiteCall, closeAllClients } from './core/router.js';
 import { initSwitchboard } from './cli/init.js';
+import { revertSwitchboard } from './cli/revert.js';
+import { addMcpToSwitchboard } from './cli/add.js';
 
 async function main() {
-  // Handle CLI commands like `switchboard init`
+  // Handle CLI commands
   const args = process.argv.slice(2);
   if (args[0] === 'init') {
     await initSwitchboard(process.cwd());
+    process.exit(0);
+  }
+  if (args[0] === 'revert') {
+    await revertSwitchboard(process.cwd());
+    process.exit(0);
+  }
+  if (args[0] === 'add') {
+    await addMcpToSwitchboard(process.cwd(), args.slice(1));
     process.exit(0);
   }
 

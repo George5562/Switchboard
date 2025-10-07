@@ -19,6 +19,10 @@ test-spawn.js
 .claude/
 .gemini/
 .cursor/
+.switchboard/
+
+
+.github/
 
 # Local development configs
 .mcp.json
@@ -30,3 +34,7 @@ switchboard.config.json
 
 # Personal notes
 CLAUDE.md
+
+# Claude server state (runtime data, not checked in)
+.state/
+**/.state/

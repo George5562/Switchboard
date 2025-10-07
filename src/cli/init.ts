@@ -43,7 +43,18 @@ async function getStandardDescriptions(): Promise<Record<string, string>> {
       if (existsSync(path)) {
         const content = await readFileAsync(path, 'utf8');
         const parsed = JSON.parse(content);
-        // Extract descriptions from the properties object
+        // Handle new format with mcps object containing switchboard and claude descriptions
+        if (parsed.mcps) {
+          // Extract just the switchboard descriptions for backward compatibility
+          const result: Record<string, string> = {};
+          for (const [key, value] of Object.entries(parsed.mcps)) {
+            if (typeof value === 'object' && value !== null && 'switchboard' in value) {
+              result[key] = (value as any).switchboard;
+            }
+          }
+          return result;
+        }
+        // Fall back to old format
         return parsed.properties || parsed;
       }
     }
@@ -539,6 +550,63 @@ function createWrapperScript(toolName: string): string {
   return CLAUDE_WRAPPER_TEMPLATE.replace(/__TOOL_NAME__/g, JSON.stringify(toolName));
 }
 
+async function generateClaudeMd(mcpDir: string, mcpName: string): Promise<void> {
+  // Load descriptions to get Claude-specific instructions
+  let claudeInstructions = '';
+
+  try {
+    const currentFile = fileURLToPath(import.meta.url);
+    const currentDir = dirname(currentFile);
+    const possiblePaths = [
+      join(currentDir, '..', '..', 'mcp-descriptions.json'),
+      join(currentDir, '..', '..', '..', 'mcp-descriptions.json'),
+    ];
+
+    for (const path of possiblePaths) {
+      if (existsSync(path)) {
+        const content = await readFileAsync(path, 'utf8');
+        const parsed = JSON.parse(content);
+        if (parsed.mcps && parsed.mcps[mcpName] && parsed.mcps[mcpName].claude) {
+          claudeInstructions = parsed.mcps[mcpName].claude;
+          break;
+        }
+      }
+    }
+  } catch {
+    // Use default if not found
+  }
+
+  if (!claudeInstructions) {
+    claudeInstructions = `Your role is to use this MCP server to handle ${mcpName} operations. Understand the user's intent and execute the appropriate MCP operations to fulfill their request efficiently and accurately.`;
+  }
+
+  const claudeMdContent = `# Claude Intelligent Wrapper for ${mcpName}
+
+## Instructions
+
+${claudeInstructions}
+
+## Key Guidelines
+
+1. **Understand Intent**: Carefully analyze what the user is trying to achieve
+2. **Choose the Right Tool**: Select the most appropriate MCP operation for the task
+3. **Handle Errors Gracefully**: If an operation fails, explain what happened and suggest alternatives
+4. **Provide Clear Feedback**: Let the user know what actions you're taking and their results
+
+## Available Operations
+
+When the user invokes this tool with a natural language query, you should:
+1. Parse their intent
+2. Map it to the appropriate MCP subtool
+3. Execute the operation with correct parameters
+4. Return clear, actionable results
+
+Remember: You are an intelligent interface that makes the ${mcpName} MCP server accessible through natural language.
+`;
+
+  await writeFileAsync(join(mcpDir, 'CLAUDE.md'), claudeMdContent);
+}
+
 async function enableIntelligentMode(mcpsDir: string, mcpNames: string[]): Promise<string[]> {
   const wrapped: string[] = [];
 
@@ -562,6 +630,9 @@ async function enableIntelligentMode(mcpsDir: string, mcpNames: string[]): Promi
 
     const originalContent = await readFileAsync(archivedPath, 'utf8');
     const originalConfig = JSON.parse(originalContent);
+
+    // Generate CLAUDE.md file for this MCP
+    await generateClaudeMd(mcpDir, name);
 
     const wrapperScriptName = `${name}-claude-wrapper.mjs`;
     const wrapperScriptPath = join(mcpDir, wrapperScriptName);
@@ -649,8 +720,13 @@ async function copyExistingMcps(
 }
 
 export async function initSwitchboard(cwd: string): Promise<void> {
+  console.log('\n🚀 Initializing Switchboard...\n');
+
   const switchboardDir = join(cwd, '.switchboard');
   const mcpsDir = join(switchboardDir, 'mcps');
+  const backupsDir = join(switchboardDir, 'backups');
+  const configPath = join(switchboardDir, 'switchboard.config.json');
+  const rootConfigPath = join(cwd, '.mcp.json');
 
   // Check if .switchboard already exists
   if (existsSync(switchboardDir)) {
@@ -659,12 +735,24 @@ export async function initSwitchboard(cwd: string): Promise<void> {
   }
 
   try {
+    // Load standard descriptions
+    const standardDescs = await getStandardDescriptions();
+
     // Discover existing .mcp.json
     const existingConfig = await discoverExistingMcp(cwd);
 
-    // Create directory structure
+    // Create directory structure (including backups dir)
     await mkdirAsync(switchboardDir, { recursive: true });
     await mkdirAsync(mcpsDir, { recursive: true });
+    await mkdirAsync(backupsDir, { recursive: true });
+
+    // Create backup of original .mcp.json if it exists
+    if (existsSync(rootConfigPath)) {
+      const backupPath = join(backupsDir, `mcp.json.backup.${Date.now()}`);
+      const originalContent = await readFileAsync(rootConfigPath, 'utf8');
+      await writeFileAsync(backupPath, originalContent);
+      console.log(`  ✓ Created backup: .switchboard/backups/${backupPath.split('/').pop()}`);
+    }
 
     // Copy existing MCPs if found
     const { copiedMcps, standardDescriptions } = existingConfig
@@ -735,40 +823,42 @@ export async function initSwitchboard(cwd: string): Promise<void> {
         `  🤖 Intelligent wrappers + archived originals for: ${claudeWrapped.join(', ')}`,
       );
     }
+    // Write the new .mcp.json configuration
+    const newConfigContent = generateTopLevelMcpTemplate(existingConfig);
+    await writeFileAsync(rootConfigPath, newConfigContent);
+    console.log(`  ✓ Updated root .mcp.json to use Switchboard`);
+
     console.log('');
     console.log('Next steps:');
+
+    let stepNumber = 1;
+
     if (copiedMcps.length > 0) {
       const needsEditing = copiedMcps.filter((name) => !standardDescriptions.includes(name));
       if (needsEditing.length > 0) {
         console.log(
-          `  1. Edit the "switchboardDescription" field for these MCPs: ${needsEditing.join(', ')}`,
+          `  ${stepNumber++}. Edit the "switchboardDescription" field for these MCPs: ${needsEditing.join(', ')}`,
         );
         console.log('     (these need custom one-line descriptions for the LLM)');
-        console.log('  2. Replace your .mcp.json with this (copy/paste):');
-      } else {
-        console.log('  1. All MCPs have standard descriptions applied - no editing needed!');
-        console.log('  2. Replace your .mcp.json with this (copy/paste):');
       }
     } else {
-      console.log('  1. Copy your existing MCPs to .switchboard/mcps/[mcp-name]/.mcp.json');
-      console.log('  2. Edit the "switchboardDescription" field in each .mcp.json file');
-      console.log('  3. Replace your .mcp.json with this (copy/paste):');
+      console.log(`  ${stepNumber++}. Copy your existing MCPs to .switchboard/mcps/[mcp-name]/.mcp.json`);
+      console.log(`  ${stepNumber++}. Edit the "switchboardDescription" field in each .mcp.json file`);
     }
+
     if (claudeWrapped.length > 0) {
       console.log('');
+      console.log('  ℹ️ Claude wrapper notes:');
       console.log(
-        "  • Intelligent mode: call the 'natural_language' subtool and pass a {\"query\"} string for Claude.",
+        "     • Call the 'natural_language' subtool with a {\"query\"} string for AI assistance",
       );
       console.log(
-        '  • Original MCP configs are preserved in each tool folder under original/.mcp.json.',
+        '     • Original MCP configs preserved in original/.mcp.json',
       );
     }
+
     console.log('');
-    console.log(generateTopLevelMcpTemplate(existingConfig));
-    console.log('');
-    console.log(
-      `  ${copiedMcps.length > 0 ? '3' : '4'}. Restart your MCP host (Claude Code, etc.)`,
-    );
+    console.log(`  ${stepNumber}. Restart your MCP host (Claude Code, etc.) to load Switchboard`);
     console.log('');
   } catch (error: any) {
     console.error('❌ Failed to initialize Switchboard:', error.message);

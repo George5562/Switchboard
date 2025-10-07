@@ -147,6 +147,13 @@ Each issue includes:
 
 ## 🚀 Quick Start Paths
 
+### I'm setting up Switchboard
+
+1. Run `switchboard init` to migrate existing MCPs
+2. Optionally enable Claude wrappers for natural language interface
+3. Use `switchboard add <mcp>` to add more MCPs incrementally
+4. Use `switchboard revert` to undo and try different options
+
 ### I'm building a new MCP
 
 1. Read [Best Practices](./mcp-best-practices.md) first
@@ -284,5 +291,10 @@ Same as Switchboard: MIT
 
 ---
 
-**Last Updated:** 2025-09-30 (Fixed: Stdio framing to use newline-delimited JSON)
+**Last Updated:** 2025-10-07
+- Added CLI commands: `init`, `add`, `revert`
+- Added Claude intelligent wrapper support with CLAUDE.md generation
+- Backup files now stored in `.switchboard/backups/`
+- Restructured `mcp-descriptions.json` with switchboard and claude descriptions
+
 **Version:** 0.1.0 (matches Switchboard release)

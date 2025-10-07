@@ -14,16 +14,16 @@ interface PendingRequest {
 }
 
 export class ChildClient {
-  private process?: ChildProcess;
-  private buffer = Buffer.alloc(0);
-  private contentLength = -1;
-  private seq = 0;
-  private pending = new Map<number, PendingRequest>();
-  private initialized = false;
+  protected process?: ChildProcess;
+  protected buffer = Buffer.alloc(0);
+  protected contentLength = -1;
+  protected seq = 0;
+  protected pending = new Map<number, PendingRequest>();
+  protected initialized = false;
 
   constructor(
-    private meta: ChildMeta,
-    private rpcTimeoutMs: number = 60000,
+    protected meta: ChildMeta,
+    protected rpcTimeoutMs: number = 60000,
   ) {}
 
   private async ensureStarted(): Promise<void> {
@@ -149,7 +149,7 @@ export class ChildClient {
     }
   }
 
-  private async send(method: string, params?: any): Promise<any> {
+  protected async send(method: string, params?: any): Promise<any> {
     await this.ensureStarted();
 
     const id = ++this.seq;
@@ -210,5 +210,90 @@ export class ChildClient {
     }
     this.pending.clear();
     this.initialized = false;
+  }
+}
+
+/**
+ * Extended child client for Claude Code MCP servers with idle management
+ * and graceful shutdown support for SessionEnd hooks.
+ */
+export class ClaudeChildClient extends ChildClient {
+  private lastActivity = Date.now();
+  private idleTimer?: NodeJS.Timeout;
+  private isShuttingDown = false;
+
+  constructor(
+    meta: ChildMeta,
+    rpcTimeoutMs: number = 60000,
+    private idleTimeoutMs: number = 300000, // 5 minutes default
+  ) {
+    super(meta, rpcTimeoutMs);
+
+    if (this.idleTimeoutMs > 0) {
+      // Check idle status every minute
+      const checkInterval = Math.min(60000, Math.floor(this.idleTimeoutMs / 5));
+      this.idleTimer = setInterval(() => {
+        this.checkIdle();
+      }, checkInterval);
+    }
+  }
+
+  private checkIdle(): void {
+    if (this.isShuttingDown) return;
+
+    const idleTime = Date.now() - this.lastActivity;
+    if (idleTime > this.idleTimeoutMs) {
+      process.stderr.write(
+        `[ClaudeChildClient] Idle timeout (${Math.round(idleTime / 1000)}s) for ${this.meta.name}, shutting down gracefully...\n`
+      );
+      this.gracefulShutdown();
+    }
+  }
+
+  /**
+   * Gracefully shutdown the child Claude Code instance.
+   * Sends SIGTERM (not SIGKILL) to allow SessionEnd hooks to execute.
+   */
+  async gracefulShutdown(): Promise<void> {
+    if (this.isShuttingDown) return;
+    this.isShuttingDown = true;
+
+    if (this.idleTimer) {
+      clearInterval(this.idleTimer);
+      this.idleTimer = undefined;
+    }
+
+    if (this.process) {
+      process.stderr.write(
+        `[ClaudeChildClient] Sending SIGTERM to ${this.meta.name}...\n`
+      );
+
+      // SIGTERM allows hooks to run
+      this.process.kill('SIGTERM');
+
+      // Wait up to 10s for SessionEnd hook to complete
+      await new Promise(resolve => setTimeout(resolve, 10000));
+    }
+
+    this.close();
+  }
+
+  /**
+   * Override send to reset idle timer on any activity
+   */
+  protected async send(method: string, params?: any): Promise<any> {
+    this.lastActivity = Date.now();
+    return super.send(method, params);
+  }
+
+  /**
+   * Override close to clean up idle timer
+   */
+  close(): void {
+    if (this.idleTimer) {
+      clearInterval(this.idleTimer);
+      this.idleTimer = undefined;
+    }
+    super.close();
   }
 }

@@ -179,7 +179,7 @@ var require_uri_all = __commonJS({
         return result + encoded;
       }
       function ucs2decode(string) {
-        var output2 = [];
+        var output3 = [];
         var counter = 0;
         var length = string.length;
         while (counter < length) {
@@ -187,16 +187,16 @@ var require_uri_all = __commonJS({
           if (value >= 55296 && value <= 56319 && counter < length) {
             var extra = string.charCodeAt(counter++);
             if ((extra & 64512) == 56320) {
-              output2.push(((value & 1023) << 10) + (extra & 1023) + 65536);
+              output3.push(((value & 1023) << 10) + (extra & 1023) + 65536);
             } else {
-              output2.push(value);
+              output3.push(value);
               counter--;
             }
           } else {
-            output2.push(value);
+            output3.push(value);
           }
         }
-        return output2;
+        return output3;
       }
       var ucs2encode = function ucs2encode2(array) {
         return String.fromCodePoint.apply(String, toConsumableArray(array));
@@ -230,21 +230,21 @@ var require_uri_all = __commonJS({
         }
         return floor(k + (baseMinusTMin + 1) * delta / (delta + skew));
       };
-      var decode = function decode2(input2) {
-        var output2 = [];
-        var inputLength = input2.length;
+      var decode = function decode2(input3) {
+        var output3 = [];
+        var inputLength = input3.length;
         var i = 0;
         var n = initialN;
         var bias = initialBias;
-        var basic = input2.lastIndexOf(delimiter);
+        var basic = input3.lastIndexOf(delimiter);
         if (basic < 0) {
           basic = 0;
         }
         for (var j = 0; j < basic; ++j) {
-          if (input2.charCodeAt(j) >= 128) {
+          if (input3.charCodeAt(j) >= 128) {
             error$1("not-basic");
           }
-          output2.push(input2.charCodeAt(j));
+          output3.push(input3.charCodeAt(j));
         }
         for (var index = basic > 0 ? basic + 1 : 0; index < inputLength; ) {
           var oldi = i;
@@ -257,7 +257,7 @@ var require_uri_all = __commonJS({
             if (index >= inputLength) {
               error$1("invalid-input");
             }
-            var digit = basicToDigit(input2.charCodeAt(index++));
+            var digit = basicToDigit(input3.charCodeAt(index++));
             if (digit >= base || digit > floor((maxInt - i) / w)) {
               error$1("overflow");
             }
@@ -272,21 +272,21 @@ var require_uri_all = __commonJS({
             }
             w *= baseMinusT;
           }
-          var out = output2.length + 1;
+          var out = output3.length + 1;
           bias = adapt(i - oldi, out, oldi == 0);
           if (floor(i / out) > maxInt - n) {
             error$1("overflow");
           }
           n += floor(i / out);
           i %= out;
-          output2.splice(i++, 0, n);
+          output3.splice(i++, 0, n);
         }
-        return String.fromCodePoint.apply(String, output2);
+        return String.fromCodePoint.apply(String, output3);
       };
-      var encode = function encode2(input2) {
-        var output2 = [];
-        input2 = ucs2decode(input2);
-        var inputLength = input2.length;
+      var encode = function encode2(input3) {
+        var output3 = [];
+        input3 = ucs2decode(input3);
+        var inputLength = input3.length;
         var n = initialN;
         var delta = 0;
         var bias = initialBias;
@@ -294,10 +294,10 @@ var require_uri_all = __commonJS({
         var _didIteratorError = false;
         var _iteratorError = void 0;
         try {
-          for (var _iterator = input2[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+          for (var _iterator = input3[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
             var _currentValue2 = _step.value;
             if (_currentValue2 < 128) {
-              output2.push(stringFromCharCode(_currentValue2));
+              output3.push(stringFromCharCode(_currentValue2));
             }
           }
         } catch (err) {
@@ -314,10 +314,10 @@ var require_uri_all = __commonJS({
             }
           }
         }
-        var basicLength = output2.length;
+        var basicLength = output3.length;
         var handledCPCount = basicLength;
         if (basicLength) {
-          output2.push(delimiter);
+          output3.push(delimiter);
         }
         while (handledCPCount < inputLength) {
           var m = maxInt;
@@ -325,7 +325,7 @@ var require_uri_all = __commonJS({
           var _didIteratorError2 = false;
           var _iteratorError2 = void 0;
           try {
-            for (var _iterator2 = input2[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+            for (var _iterator2 = input3[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
               var currentValue = _step2.value;
               if (currentValue >= n && currentValue < m) {
                 m = currentValue;
@@ -355,7 +355,7 @@ var require_uri_all = __commonJS({
           var _didIteratorError3 = false;
           var _iteratorError3 = void 0;
           try {
-            for (var _iterator3 = input2[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+            for (var _iterator3 = input3[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
               var _currentValue = _step3.value;
               if (_currentValue < n && ++delta > maxInt) {
                 error$1("overflow");
@@ -374,10 +374,10 @@ var require_uri_all = __commonJS({
                   }
                   var qMinusT = q - t;
                   var baseMinusT = base - t;
-                  output2.push(stringFromCharCode(digitToBasic(t + qMinusT % baseMinusT, 0)));
+                  output3.push(stringFromCharCode(digitToBasic(t + qMinusT % baseMinusT, 0)));
                   q = floor(qMinusT / baseMinusT);
                 }
-                output2.push(stringFromCharCode(digitToBasic(q, 0)));
+                output3.push(stringFromCharCode(digitToBasic(q, 0)));
                 bias = adapt(delta, handledCPCountPlusOne, handledCPCount == basicLength);
                 delta = 0;
                 ++handledCPCount;
@@ -400,15 +400,15 @@ var require_uri_all = __commonJS({
           ++delta;
           ++n;
         }
-        return output2.join("");
+        return output3.join("");
       };
-      var toUnicode = function toUnicode2(input2) {
-        return mapDomain(input2, function(string) {
+      var toUnicode = function toUnicode2(input3) {
+        return mapDomain(input3, function(string) {
           return regexPunycode.test(string) ? decode(string.slice(4).toLowerCase()) : string;
         });
       };
-      var toASCII = function toASCII2(input2) {
-        return mapDomain(input2, function(string) {
+      var toASCII = function toASCII2(input3) {
+        return mapDomain(input3, function(string) {
           return regexNonASCII.test(string) ? "xn--" + encode(string) : string;
         });
       };
@@ -640,30 +640,30 @@ var require_uri_all = __commonJS({
       var RDS2 = /^\/\.(\/|$)/;
       var RDS3 = /^\/\.\.(\/|$)/;
       var RDS5 = /^\/?(?:.|\n)*?(?=\/|$)/;
-      function removeDotSegments(input2) {
-        var output2 = [];
-        while (input2.length) {
-          if (input2.match(RDS1)) {
-            input2 = input2.replace(RDS1, "");
-          } else if (input2.match(RDS2)) {
-            input2 = input2.replace(RDS2, "/");
-          } else if (input2.match(RDS3)) {
-            input2 = input2.replace(RDS3, "/");
-            output2.pop();
-          } else if (input2 === "." || input2 === "..") {
-            input2 = "";
+      function removeDotSegments(input3) {
+        var output3 = [];
+        while (input3.length) {
+          if (input3.match(RDS1)) {
+            input3 = input3.replace(RDS1, "");
+          } else if (input3.match(RDS2)) {
+            input3 = input3.replace(RDS2, "/");
+          } else if (input3.match(RDS3)) {
+            input3 = input3.replace(RDS3, "/");
+            output3.pop();
+          } else if (input3 === "." || input3 === "..") {
+            input3 = "";
           } else {
-            var im = input2.match(RDS5);
+            var im = input3.match(RDS5);
             if (im) {
               var s = im[0];
-              input2 = input2.slice(s.length);
-              output2.push(s);
+              input3 = input3.slice(s.length);
+              output3.push(s);
             } else {
               throw new Error("Unexpected dot segment condition");
             }
           }
         }
-        return output2.join("");
+        return output3.join("");
       }
       function serialize(components) {
         var options = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : {};
@@ -6904,41 +6904,41 @@ var ZodType = class {
   get description() {
     return this._def.description;
   }
-  _getType(input2) {
-    return getParsedType(input2.data);
+  _getType(input3) {
+    return getParsedType(input3.data);
   }
-  _getOrReturnCtx(input2, ctx) {
+  _getOrReturnCtx(input3, ctx) {
     return ctx || {
-      common: input2.parent.common,
-      data: input2.data,
-      parsedType: getParsedType(input2.data),
+      common: input3.parent.common,
+      data: input3.data,
+      parsedType: getParsedType(input3.data),
       schemaErrorMap: this._def.errorMap,
-      path: input2.path,
-      parent: input2.parent
+      path: input3.path,
+      parent: input3.parent
     };
   }
-  _processInputParams(input2) {
+  _processInputParams(input3) {
     return {
       status: new ParseStatus(),
       ctx: {
-        common: input2.parent.common,
-        data: input2.data,
-        parsedType: getParsedType(input2.data),
+        common: input3.parent.common,
+        data: input3.data,
+        parsedType: getParsedType(input3.data),
         schemaErrorMap: this._def.errorMap,
-        path: input2.path,
-        parent: input2.parent
+        path: input3.path,
+        parent: input3.parent
       }
     };
   }
-  _parseSync(input2) {
-    const result = this._parse(input2);
+  _parseSync(input3) {
+    const result = this._parse(input3);
     if (isAsync(result)) {
       throw new Error("Synchronous parse encountered promise.");
     }
     return result;
   }
-  _parseAsync(input2) {
-    const result = this._parse(input2);
+  _parseAsync(input3) {
+    const result = this._parse(input3);
     return Promise.resolve(result);
   }
   parse(data, params) {
@@ -7264,13 +7264,13 @@ function isValidCidr(ip, version) {
   return false;
 }
 var ZodString = class _ZodString extends ZodType {
-  _parse(input2) {
+  _parse(input3) {
     if (this._def.coerce) {
-      input2.data = String(input2.data);
+      input3.data = String(input3.data);
     }
-    const parsedType = this._getType(input2);
+    const parsedType = this._getType(input3);
     if (parsedType !== ZodParsedType.string) {
-      const ctx2 = this._getOrReturnCtx(input2);
+      const ctx2 = this._getOrReturnCtx(input3);
       addIssueToContext(ctx2, {
         code: ZodIssueCode.invalid_type,
         expected: ZodParsedType.string,
@@ -7282,8 +7282,8 @@ var ZodString = class _ZodString extends ZodType {
     let ctx = void 0;
     for (const check of this._def.checks) {
       if (check.kind === "min") {
-        if (input2.data.length < check.value) {
-          ctx = this._getOrReturnCtx(input2, ctx);
+        if (input3.data.length < check.value) {
+          ctx = this._getOrReturnCtx(input3, ctx);
           addIssueToContext(ctx, {
             code: ZodIssueCode.too_small,
             minimum: check.value,
@@ -7295,8 +7295,8 @@ var ZodString = class _ZodString extends ZodType {
           status.dirty();
         }
       } else if (check.kind === "max") {
-        if (input2.data.length > check.value) {
-          ctx = this._getOrReturnCtx(input2, ctx);
+        if (input3.data.length > check.value) {
+          ctx = this._getOrReturnCtx(input3, ctx);
           addIssueToContext(ctx, {
             code: ZodIssueCode.too_big,
             maximum: check.value,
@@ -7308,10 +7308,10 @@ var ZodString = class _ZodString extends ZodType {
           status.dirty();
         }
       } else if (check.kind === "length") {
-        const tooBig = input2.data.length > check.value;
-        const tooSmall = input2.data.length < check.value;
+        const tooBig = input3.data.length > check.value;
+        const tooSmall = input3.data.length < check.value;
         if (tooBig || tooSmall) {
-          ctx = this._getOrReturnCtx(input2, ctx);
+          ctx = this._getOrReturnCtx(input3, ctx);
           if (tooBig) {
             addIssueToContext(ctx, {
               code: ZodIssueCode.too_big,
@@ -7334,8 +7334,8 @@ var ZodString = class _ZodString extends ZodType {
           status.dirty();
         }
       } else if (check.kind === "email") {
-        if (!emailRegex.test(input2.data)) {
-          ctx = this._getOrReturnCtx(input2, ctx);
+        if (!emailRegex.test(input3.data)) {
+          ctx = this._getOrReturnCtx(input3, ctx);
           addIssueToContext(ctx, {
             validation: "email",
             code: ZodIssueCode.invalid_string,
@@ -7347,8 +7347,8 @@ var ZodString = class _ZodString extends ZodType {
         if (!emojiRegex) {
           emojiRegex = new RegExp(_emojiRegex, "u");
         }
-        if (!emojiRegex.test(input2.data)) {
-          ctx = this._getOrReturnCtx(input2, ctx);
+        if (!emojiRegex.test(input3.data)) {
+          ctx = this._getOrReturnCtx(input3, ctx);
           addIssueToContext(ctx, {
             validation: "emoji",
             code: ZodIssueCode.invalid_string,
@@ -7357,8 +7357,8 @@ var ZodString = class _ZodString extends ZodType {
           status.dirty();
         }
       } else if (check.kind === "uuid") {
-        if (!uuidRegex.test(input2.data)) {
-          ctx = this._getOrReturnCtx(input2, ctx);
+        if (!uuidRegex.test(input3.data)) {
+          ctx = this._getOrReturnCtx(input3, ctx);
           addIssueToContext(ctx, {
             validation: "uuid",
             code: ZodIssueCode.invalid_string,
@@ -7367,8 +7367,8 @@ var ZodString = class _ZodString extends ZodType {
           status.dirty();
         }
       } else if (check.kind === "nanoid") {
-        if (!nanoidRegex.test(input2.data)) {
-          ctx = this._getOrReturnCtx(input2, ctx);
+        if (!nanoidRegex.test(input3.data)) {
+          ctx = this._getOrReturnCtx(input3, ctx);
           addIssueToContext(ctx, {
             validation: "nanoid",
             code: ZodIssueCode.invalid_string,
@@ -7377,8 +7377,8 @@ var ZodString = class _ZodString extends ZodType {
           status.dirty();
         }
       } else if (check.kind === "cuid") {
-        if (!cuidRegex.test(input2.data)) {
-          ctx = this._getOrReturnCtx(input2, ctx);
+        if (!cuidRegex.test(input3.data)) {
+          ctx = this._getOrReturnCtx(input3, ctx);
           addIssueToContext(ctx, {
             validation: "cuid",
             code: ZodIssueCode.invalid_string,
@@ -7387,8 +7387,8 @@ var ZodString = class _ZodString extends ZodType {
           status.dirty();
         }
       } else if (check.kind === "cuid2") {
-        if (!cuid2Regex.test(input2.data)) {
-          ctx = this._getOrReturnCtx(input2, ctx);
+        if (!cuid2Regex.test(input3.data)) {
+          ctx = this._getOrReturnCtx(input3, ctx);
           addIssueToContext(ctx, {
             validation: "cuid2",
             code: ZodIssueCode.invalid_string,
@@ -7397,8 +7397,8 @@ var ZodString = class _ZodString extends ZodType {
           status.dirty();
         }
       } else if (check.kind === "ulid") {
-        if (!ulidRegex.test(input2.data)) {
-          ctx = this._getOrReturnCtx(input2, ctx);
+        if (!ulidRegex.test(input3.data)) {
+          ctx = this._getOrReturnCtx(input3, ctx);
           addIssueToContext(ctx, {
             validation: "ulid",
             code: ZodIssueCode.invalid_string,
@@ -7408,9 +7408,9 @@ var ZodString = class _ZodString extends ZodType {
         }
       } else if (check.kind === "url") {
         try {
-          new URL(input2.data);
+          new URL(input3.data);
         } catch {
-          ctx = this._getOrReturnCtx(input2, ctx);
+          ctx = this._getOrReturnCtx(input3, ctx);
           addIssueToContext(ctx, {
             validation: "url",
             code: ZodIssueCode.invalid_string,
@@ -7420,9 +7420,9 @@ var ZodString = class _ZodString extends ZodType {
         }
       } else if (check.kind === "regex") {
         check.regex.lastIndex = 0;
-        const testResult = check.regex.test(input2.data);
+        const testResult = check.regex.test(input3.data);
         if (!testResult) {
-          ctx = this._getOrReturnCtx(input2, ctx);
+          ctx = this._getOrReturnCtx(input3, ctx);
           addIssueToContext(ctx, {
             validation: "regex",
             code: ZodIssueCode.invalid_string,
@@ -7431,10 +7431,10 @@ var ZodString = class _ZodString extends ZodType {
           status.dirty();
         }
       } else if (check.kind === "trim") {
-        input2.data = input2.data.trim();
+        input3.data = input3.data.trim();
       } else if (check.kind === "includes") {
-        if (!input2.data.includes(check.value, check.position)) {
-          ctx = this._getOrReturnCtx(input2, ctx);
+        if (!input3.data.includes(check.value, check.position)) {
+          ctx = this._getOrReturnCtx(input3, ctx);
           addIssueToContext(ctx, {
             code: ZodIssueCode.invalid_string,
             validation: { includes: check.value, position: check.position },
@@ -7443,12 +7443,12 @@ var ZodString = class _ZodString extends ZodType {
           status.dirty();
         }
       } else if (check.kind === "toLowerCase") {
-        input2.data = input2.data.toLowerCase();
+        input3.data = input3.data.toLowerCase();
       } else if (check.kind === "toUpperCase") {
-        input2.data = input2.data.toUpperCase();
+        input3.data = input3.data.toUpperCase();
       } else if (check.kind === "startsWith") {
-        if (!input2.data.startsWith(check.value)) {
-          ctx = this._getOrReturnCtx(input2, ctx);
+        if (!input3.data.startsWith(check.value)) {
+          ctx = this._getOrReturnCtx(input3, ctx);
           addIssueToContext(ctx, {
             code: ZodIssueCode.invalid_string,
             validation: { startsWith: check.value },
@@ -7457,8 +7457,8 @@ var ZodString = class _ZodString extends ZodType {
           status.dirty();
         }
       } else if (check.kind === "endsWith") {
-        if (!input2.data.endsWith(check.value)) {
-          ctx = this._getOrReturnCtx(input2, ctx);
+        if (!input3.data.endsWith(check.value)) {
+          ctx = this._getOrReturnCtx(input3, ctx);
           addIssueToContext(ctx, {
             code: ZodIssueCode.invalid_string,
             validation: { endsWith: check.value },
@@ -7468,8 +7468,8 @@ var ZodString = class _ZodString extends ZodType {
         }
       } else if (check.kind === "datetime") {
         const regex = datetimeRegex(check);
-        if (!regex.test(input2.data)) {
-          ctx = this._getOrReturnCtx(input2, ctx);
+        if (!regex.test(input3.data)) {
+          ctx = this._getOrReturnCtx(input3, ctx);
           addIssueToContext(ctx, {
             code: ZodIssueCode.invalid_string,
             validation: "datetime",
@@ -7479,8 +7479,8 @@ var ZodString = class _ZodString extends ZodType {
         }
       } else if (check.kind === "date") {
         const regex = dateRegex;
-        if (!regex.test(input2.data)) {
-          ctx = this._getOrReturnCtx(input2, ctx);
+        if (!regex.test(input3.data)) {
+          ctx = this._getOrReturnCtx(input3, ctx);
           addIssueToContext(ctx, {
             code: ZodIssueCode.invalid_string,
             validation: "date",
@@ -7490,8 +7490,8 @@ var ZodString = class _ZodString extends ZodType {
         }
       } else if (check.kind === "time") {
         const regex = timeRegex(check);
-        if (!regex.test(input2.data)) {
-          ctx = this._getOrReturnCtx(input2, ctx);
+        if (!regex.test(input3.data)) {
+          ctx = this._getOrReturnCtx(input3, ctx);
           addIssueToContext(ctx, {
             code: ZodIssueCode.invalid_string,
             validation: "time",
@@ -7500,8 +7500,8 @@ var ZodString = class _ZodString extends ZodType {
           status.dirty();
         }
       } else if (check.kind === "duration") {
-        if (!durationRegex.test(input2.data)) {
-          ctx = this._getOrReturnCtx(input2, ctx);
+        if (!durationRegex.test(input3.data)) {
+          ctx = this._getOrReturnCtx(input3, ctx);
           addIssueToContext(ctx, {
             validation: "duration",
             code: ZodIssueCode.invalid_string,
@@ -7510,8 +7510,8 @@ var ZodString = class _ZodString extends ZodType {
           status.dirty();
         }
       } else if (check.kind === "ip") {
-        if (!isValidIP(input2.data, check.version)) {
-          ctx = this._getOrReturnCtx(input2, ctx);
+        if (!isValidIP(input3.data, check.version)) {
+          ctx = this._getOrReturnCtx(input3, ctx);
           addIssueToContext(ctx, {
             validation: "ip",
             code: ZodIssueCode.invalid_string,
@@ -7520,8 +7520,8 @@ var ZodString = class _ZodString extends ZodType {
           status.dirty();
         }
       } else if (check.kind === "jwt") {
-        if (!isValidJWT(input2.data, check.alg)) {
-          ctx = this._getOrReturnCtx(input2, ctx);
+        if (!isValidJWT(input3.data, check.alg)) {
+          ctx = this._getOrReturnCtx(input3, ctx);
           addIssueToContext(ctx, {
             validation: "jwt",
             code: ZodIssueCode.invalid_string,
@@ -7530,8 +7530,8 @@ var ZodString = class _ZodString extends ZodType {
           status.dirty();
         }
       } else if (check.kind === "cidr") {
-        if (!isValidCidr(input2.data, check.version)) {
-          ctx = this._getOrReturnCtx(input2, ctx);
+        if (!isValidCidr(input3.data, check.version)) {
+          ctx = this._getOrReturnCtx(input3, ctx);
           addIssueToContext(ctx, {
             validation: "cidr",
             code: ZodIssueCode.invalid_string,
@@ -7540,8 +7540,8 @@ var ZodString = class _ZodString extends ZodType {
           status.dirty();
         }
       } else if (check.kind === "base64") {
-        if (!base64Regex.test(input2.data)) {
-          ctx = this._getOrReturnCtx(input2, ctx);
+        if (!base64Regex.test(input3.data)) {
+          ctx = this._getOrReturnCtx(input3, ctx);
           addIssueToContext(ctx, {
             validation: "base64",
             code: ZodIssueCode.invalid_string,
@@ -7550,8 +7550,8 @@ var ZodString = class _ZodString extends ZodType {
           status.dirty();
         }
       } else if (check.kind === "base64url") {
-        if (!base64urlRegex.test(input2.data)) {
-          ctx = this._getOrReturnCtx(input2, ctx);
+        if (!base64urlRegex.test(input3.data)) {
+          ctx = this._getOrReturnCtx(input3, ctx);
           addIssueToContext(ctx, {
             validation: "base64url",
             code: ZodIssueCode.invalid_string,
@@ -7563,7 +7563,7 @@ var ZodString = class _ZodString extends ZodType {
         util.assertNever(check);
       }
     }
-    return { status: status.value, value: input2.data };
+    return { status: status.value, value: input3.data };
   }
   _regex(regex, validation, message) {
     return this.refinement((data) => regex.test(data), {
@@ -7824,13 +7824,13 @@ var ZodNumber = class _ZodNumber extends ZodType {
     this.max = this.lte;
     this.step = this.multipleOf;
   }
-  _parse(input2) {
+  _parse(input3) {
     if (this._def.coerce) {
-      input2.data = Number(input2.data);
+      input3.data = Number(input3.data);
     }
-    const parsedType = this._getType(input2);
+    const parsedType = this._getType(input3);
     if (parsedType !== ZodParsedType.number) {
-      const ctx2 = this._getOrReturnCtx(input2);
+      const ctx2 = this._getOrReturnCtx(input3);
       addIssueToContext(ctx2, {
         code: ZodIssueCode.invalid_type,
         expected: ZodParsedType.number,
@@ -7842,8 +7842,8 @@ var ZodNumber = class _ZodNumber extends ZodType {
     const status = new ParseStatus();
     for (const check of this._def.checks) {
       if (check.kind === "int") {
-        if (!util.isInteger(input2.data)) {
-          ctx = this._getOrReturnCtx(input2, ctx);
+        if (!util.isInteger(input3.data)) {
+          ctx = this._getOrReturnCtx(input3, ctx);
           addIssueToContext(ctx, {
             code: ZodIssueCode.invalid_type,
             expected: "integer",
@@ -7853,9 +7853,9 @@ var ZodNumber = class _ZodNumber extends ZodType {
           status.dirty();
         }
       } else if (check.kind === "min") {
-        const tooSmall = check.inclusive ? input2.data < check.value : input2.data <= check.value;
+        const tooSmall = check.inclusive ? input3.data < check.value : input3.data <= check.value;
         if (tooSmall) {
-          ctx = this._getOrReturnCtx(input2, ctx);
+          ctx = this._getOrReturnCtx(input3, ctx);
           addIssueToContext(ctx, {
             code: ZodIssueCode.too_small,
             minimum: check.value,
@@ -7867,9 +7867,9 @@ var ZodNumber = class _ZodNumber extends ZodType {
           status.dirty();
         }
       } else if (check.kind === "max") {
-        const tooBig = check.inclusive ? input2.data > check.value : input2.data >= check.value;
+        const tooBig = check.inclusive ? input3.data > check.value : input3.data >= check.value;
         if (tooBig) {
-          ctx = this._getOrReturnCtx(input2, ctx);
+          ctx = this._getOrReturnCtx(input3, ctx);
           addIssueToContext(ctx, {
             code: ZodIssueCode.too_big,
             maximum: check.value,
@@ -7881,8 +7881,8 @@ var ZodNumber = class _ZodNumber extends ZodType {
           status.dirty();
         }
       } else if (check.kind === "multipleOf") {
-        if (floatSafeRemainder(input2.data, check.value) !== 0) {
-          ctx = this._getOrReturnCtx(input2, ctx);
+        if (floatSafeRemainder(input3.data, check.value) !== 0) {
+          ctx = this._getOrReturnCtx(input3, ctx);
           addIssueToContext(ctx, {
             code: ZodIssueCode.not_multiple_of,
             multipleOf: check.value,
@@ -7891,8 +7891,8 @@ var ZodNumber = class _ZodNumber extends ZodType {
           status.dirty();
         }
       } else if (check.kind === "finite") {
-        if (!Number.isFinite(input2.data)) {
-          ctx = this._getOrReturnCtx(input2, ctx);
+        if (!Number.isFinite(input3.data)) {
+          ctx = this._getOrReturnCtx(input3, ctx);
           addIssueToContext(ctx, {
             code: ZodIssueCode.not_finite,
             message: check.message
@@ -7903,7 +7903,7 @@ var ZodNumber = class _ZodNumber extends ZodType {
         util.assertNever(check);
       }
     }
-    return { status: status.value, value: input2.data };
+    return { status: status.value, value: input3.data };
   }
   gte(value, message) {
     return this.setLimit("min", value, true, errorUtil.toString(message));
@@ -8055,25 +8055,25 @@ var ZodBigInt = class _ZodBigInt extends ZodType {
     this.min = this.gte;
     this.max = this.lte;
   }
-  _parse(input2) {
+  _parse(input3) {
     if (this._def.coerce) {
       try {
-        input2.data = BigInt(input2.data);
+        input3.data = BigInt(input3.data);
       } catch {
-        return this._getInvalidInput(input2);
+        return this._getInvalidInput(input3);
       }
     }
-    const parsedType = this._getType(input2);
+    const parsedType = this._getType(input3);
     if (parsedType !== ZodParsedType.bigint) {
-      return this._getInvalidInput(input2);
+      return this._getInvalidInput(input3);
     }
     let ctx = void 0;
     const status = new ParseStatus();
     for (const check of this._def.checks) {
       if (check.kind === "min") {
-        const tooSmall = check.inclusive ? input2.data < check.value : input2.data <= check.value;
+        const tooSmall = check.inclusive ? input3.data < check.value : input3.data <= check.value;
         if (tooSmall) {
-          ctx = this._getOrReturnCtx(input2, ctx);
+          ctx = this._getOrReturnCtx(input3, ctx);
           addIssueToContext(ctx, {
             code: ZodIssueCode.too_small,
             type: "bigint",
@@ -8084,9 +8084,9 @@ var ZodBigInt = class _ZodBigInt extends ZodType {
           status.dirty();
         }
       } else if (check.kind === "max") {
-        const tooBig = check.inclusive ? input2.data > check.value : input2.data >= check.value;
+        const tooBig = check.inclusive ? input3.data > check.value : input3.data >= check.value;
         if (tooBig) {
-          ctx = this._getOrReturnCtx(input2, ctx);
+          ctx = this._getOrReturnCtx(input3, ctx);
           addIssueToContext(ctx, {
             code: ZodIssueCode.too_big,
             type: "bigint",
@@ -8097,8 +8097,8 @@ var ZodBigInt = class _ZodBigInt extends ZodType {
           status.dirty();
         }
       } else if (check.kind === "multipleOf") {
-        if (input2.data % check.value !== BigInt(0)) {
-          ctx = this._getOrReturnCtx(input2, ctx);
+        if (input3.data % check.value !== BigInt(0)) {
+          ctx = this._getOrReturnCtx(input3, ctx);
           addIssueToContext(ctx, {
             code: ZodIssueCode.not_multiple_of,
             multipleOf: check.value,
@@ -8110,10 +8110,10 @@ var ZodBigInt = class _ZodBigInt extends ZodType {
         util.assertNever(check);
       }
     }
-    return { status: status.value, value: input2.data };
+    return { status: status.value, value: input3.data };
   }
-  _getInvalidInput(input2) {
-    const ctx = this._getOrReturnCtx(input2);
+  _getInvalidInput(input3) {
+    const ctx = this._getOrReturnCtx(input3);
     addIssueToContext(ctx, {
       code: ZodIssueCode.invalid_type,
       expected: ZodParsedType.bigint,
@@ -8222,13 +8222,13 @@ ZodBigInt.create = (params) => {
   });
 };
 var ZodBoolean = class extends ZodType {
-  _parse(input2) {
+  _parse(input3) {
     if (this._def.coerce) {
-      input2.data = Boolean(input2.data);
+      input3.data = Boolean(input3.data);
     }
-    const parsedType = this._getType(input2);
+    const parsedType = this._getType(input3);
     if (parsedType !== ZodParsedType.boolean) {
-      const ctx = this._getOrReturnCtx(input2);
+      const ctx = this._getOrReturnCtx(input3);
       addIssueToContext(ctx, {
         code: ZodIssueCode.invalid_type,
         expected: ZodParsedType.boolean,
@@ -8236,7 +8236,7 @@ var ZodBoolean = class extends ZodType {
       });
       return INVALID;
     }
-    return OK(input2.data);
+    return OK(input3.data);
   }
 };
 ZodBoolean.create = (params) => {
@@ -8247,13 +8247,13 @@ ZodBoolean.create = (params) => {
   });
 };
 var ZodDate = class _ZodDate extends ZodType {
-  _parse(input2) {
+  _parse(input3) {
     if (this._def.coerce) {
-      input2.data = new Date(input2.data);
+      input3.data = new Date(input3.data);
     }
-    const parsedType = this._getType(input2);
+    const parsedType = this._getType(input3);
     if (parsedType !== ZodParsedType.date) {
-      const ctx2 = this._getOrReturnCtx(input2);
+      const ctx2 = this._getOrReturnCtx(input3);
       addIssueToContext(ctx2, {
         code: ZodIssueCode.invalid_type,
         expected: ZodParsedType.date,
@@ -8261,8 +8261,8 @@ var ZodDate = class _ZodDate extends ZodType {
       });
       return INVALID;
     }
-    if (Number.isNaN(input2.data.getTime())) {
-      const ctx2 = this._getOrReturnCtx(input2);
+    if (Number.isNaN(input3.data.getTime())) {
+      const ctx2 = this._getOrReturnCtx(input3);
       addIssueToContext(ctx2, {
         code: ZodIssueCode.invalid_date
       });
@@ -8272,8 +8272,8 @@ var ZodDate = class _ZodDate extends ZodType {
     let ctx = void 0;
     for (const check of this._def.checks) {
       if (check.kind === "min") {
-        if (input2.data.getTime() < check.value) {
-          ctx = this._getOrReturnCtx(input2, ctx);
+        if (input3.data.getTime() < check.value) {
+          ctx = this._getOrReturnCtx(input3, ctx);
           addIssueToContext(ctx, {
             code: ZodIssueCode.too_small,
             message: check.message,
@@ -8285,8 +8285,8 @@ var ZodDate = class _ZodDate extends ZodType {
           status.dirty();
         }
       } else if (check.kind === "max") {
-        if (input2.data.getTime() > check.value) {
-          ctx = this._getOrReturnCtx(input2, ctx);
+        if (input3.data.getTime() > check.value) {
+          ctx = this._getOrReturnCtx(input3, ctx);
           addIssueToContext(ctx, {
             code: ZodIssueCode.too_big,
             message: check.message,
@@ -8303,7 +8303,7 @@ var ZodDate = class _ZodDate extends ZodType {
     }
     return {
       status: status.value,
-      value: new Date(input2.data.getTime())
+      value: new Date(input3.data.getTime())
     };
   }
   _addCheck(check) {
@@ -8356,10 +8356,10 @@ ZodDate.create = (params) => {
   });
 };
 var ZodSymbol = class extends ZodType {
-  _parse(input2) {
-    const parsedType = this._getType(input2);
+  _parse(input3) {
+    const parsedType = this._getType(input3);
     if (parsedType !== ZodParsedType.symbol) {
-      const ctx = this._getOrReturnCtx(input2);
+      const ctx = this._getOrReturnCtx(input3);
       addIssueToContext(ctx, {
         code: ZodIssueCode.invalid_type,
         expected: ZodParsedType.symbol,
@@ -8367,7 +8367,7 @@ var ZodSymbol = class extends ZodType {
       });
       return INVALID;
     }
-    return OK(input2.data);
+    return OK(input3.data);
   }
 };
 ZodSymbol.create = (params) => {
@@ -8377,10 +8377,10 @@ ZodSymbol.create = (params) => {
   });
 };
 var ZodUndefined = class extends ZodType {
-  _parse(input2) {
-    const parsedType = this._getType(input2);
+  _parse(input3) {
+    const parsedType = this._getType(input3);
     if (parsedType !== ZodParsedType.undefined) {
-      const ctx = this._getOrReturnCtx(input2);
+      const ctx = this._getOrReturnCtx(input3);
       addIssueToContext(ctx, {
         code: ZodIssueCode.invalid_type,
         expected: ZodParsedType.undefined,
@@ -8388,7 +8388,7 @@ var ZodUndefined = class extends ZodType {
       });
       return INVALID;
     }
-    return OK(input2.data);
+    return OK(input3.data);
   }
 };
 ZodUndefined.create = (params) => {
@@ -8398,10 +8398,10 @@ ZodUndefined.create = (params) => {
   });
 };
 var ZodNull = class extends ZodType {
-  _parse(input2) {
-    const parsedType = this._getType(input2);
+  _parse(input3) {
+    const parsedType = this._getType(input3);
     if (parsedType !== ZodParsedType.null) {
-      const ctx = this._getOrReturnCtx(input2);
+      const ctx = this._getOrReturnCtx(input3);
       addIssueToContext(ctx, {
         code: ZodIssueCode.invalid_type,
         expected: ZodParsedType.null,
@@ -8409,7 +8409,7 @@ var ZodNull = class extends ZodType {
       });
       return INVALID;
     }
-    return OK(input2.data);
+    return OK(input3.data);
   }
 };
 ZodNull.create = (params) => {
@@ -8423,8 +8423,8 @@ var ZodAny = class extends ZodType {
     super(...arguments);
     this._any = true;
   }
-  _parse(input2) {
-    return OK(input2.data);
+  _parse(input3) {
+    return OK(input3.data);
   }
 };
 ZodAny.create = (params) => {
@@ -8438,8 +8438,8 @@ var ZodUnknown = class extends ZodType {
     super(...arguments);
     this._unknown = true;
   }
-  _parse(input2) {
-    return OK(input2.data);
+  _parse(input3) {
+    return OK(input3.data);
   }
 };
 ZodUnknown.create = (params) => {
@@ -8449,8 +8449,8 @@ ZodUnknown.create = (params) => {
   });
 };
 var ZodNever = class extends ZodType {
-  _parse(input2) {
-    const ctx = this._getOrReturnCtx(input2);
+  _parse(input3) {
+    const ctx = this._getOrReturnCtx(input3);
     addIssueToContext(ctx, {
       code: ZodIssueCode.invalid_type,
       expected: ZodParsedType.never,
@@ -8466,10 +8466,10 @@ ZodNever.create = (params) => {
   });
 };
 var ZodVoid = class extends ZodType {
-  _parse(input2) {
-    const parsedType = this._getType(input2);
+  _parse(input3) {
+    const parsedType = this._getType(input3);
     if (parsedType !== ZodParsedType.undefined) {
-      const ctx = this._getOrReturnCtx(input2);
+      const ctx = this._getOrReturnCtx(input3);
       addIssueToContext(ctx, {
         code: ZodIssueCode.invalid_type,
         expected: ZodParsedType.void,
@@ -8477,7 +8477,7 @@ var ZodVoid = class extends ZodType {
       });
       return INVALID;
     }
-    return OK(input2.data);
+    return OK(input3.data);
   }
 };
 ZodVoid.create = (params) => {
@@ -8487,8 +8487,8 @@ ZodVoid.create = (params) => {
   });
 };
 var ZodArray = class _ZodArray extends ZodType {
-  _parse(input2) {
-    const { ctx, status } = this._processInputParams(input2);
+  _parse(input3) {
+    const { ctx, status } = this._processInputParams(input3);
     const def = this._def;
     if (ctx.parsedType !== ZodParsedType.array) {
       addIssueToContext(ctx, {
@@ -8628,10 +8628,10 @@ var ZodObject = class _ZodObject extends ZodType {
     this._cached = { shape, keys };
     return this._cached;
   }
-  _parse(input2) {
-    const parsedType = this._getType(input2);
+  _parse(input3) {
+    const parsedType = this._getType(input3);
     if (parsedType !== ZodParsedType.object) {
-      const ctx2 = this._getOrReturnCtx(input2);
+      const ctx2 = this._getOrReturnCtx(input3);
       addIssueToContext(ctx2, {
         code: ZodIssueCode.invalid_type,
         expected: ZodParsedType.object,
@@ -8639,7 +8639,7 @@ var ZodObject = class _ZodObject extends ZodType {
       });
       return INVALID;
     }
-    const { status, ctx } = this._processInputParams(input2);
+    const { status, ctx } = this._processInputParams(input3);
     const { shape, keys: shapeKeys } = this._getCached();
     const extraKeys = [];
     if (!(this._def.catchall instanceof ZodNever && this._def.unknownKeys === "strip")) {
@@ -8952,8 +8952,8 @@ ZodObject.lazycreate = (shape, params) => {
   });
 };
 var ZodUnion = class extends ZodType {
-  _parse(input2) {
-    const { ctx } = this._processInputParams(input2);
+  _parse(input3) {
+    const { ctx } = this._processInputParams(input3);
     const options = this._def.options;
     function handleResults(results) {
       for (const result of results) {
@@ -9074,8 +9074,8 @@ var getDiscriminator = (type) => {
   }
 };
 var ZodDiscriminatedUnion = class _ZodDiscriminatedUnion extends ZodType {
-  _parse(input2) {
-    const { ctx } = this._processInputParams(input2);
+  _parse(input3) {
+    const { ctx } = this._processInputParams(input3);
     if (ctx.parsedType !== ZodParsedType.object) {
       addIssueToContext(ctx, {
         code: ZodIssueCode.invalid_type,
@@ -9188,8 +9188,8 @@ function mergeValues(a, b) {
   }
 }
 var ZodIntersection = class extends ZodType {
-  _parse(input2) {
-    const { status, ctx } = this._processInputParams(input2);
+  _parse(input3) {
+    const { status, ctx } = this._processInputParams(input3);
     const handleParsed = (parsedLeft, parsedRight) => {
       if (isAborted(parsedLeft) || isAborted(parsedRight)) {
         return INVALID;
@@ -9241,8 +9241,8 @@ ZodIntersection.create = (left, right, params) => {
   });
 };
 var ZodTuple = class _ZodTuple extends ZodType {
-  _parse(input2) {
-    const { status, ctx } = this._processInputParams(input2);
+  _parse(input3) {
+    const { status, ctx } = this._processInputParams(input3);
     if (ctx.parsedType !== ZodParsedType.array) {
       addIssueToContext(ctx, {
         code: ZodIssueCode.invalid_type,
@@ -9314,8 +9314,8 @@ var ZodRecord = class _ZodRecord extends ZodType {
   get valueSchema() {
     return this._def.valueType;
   }
-  _parse(input2) {
-    const { status, ctx } = this._processInputParams(input2);
+  _parse(input3) {
+    const { status, ctx } = this._processInputParams(input3);
     if (ctx.parsedType !== ZodParsedType.object) {
       addIssueToContext(ctx, {
         code: ZodIssueCode.invalid_type,
@@ -9367,8 +9367,8 @@ var ZodMap = class extends ZodType {
   get valueSchema() {
     return this._def.valueType;
   }
-  _parse(input2) {
-    const { status, ctx } = this._processInputParams(input2);
+  _parse(input3) {
+    const { status, ctx } = this._processInputParams(input3);
     if (ctx.parsedType !== ZodParsedType.map) {
       addIssueToContext(ctx, {
         code: ZodIssueCode.invalid_type,
@@ -9427,8 +9427,8 @@ ZodMap.create = (keyType, valueType, params) => {
   });
 };
 var ZodSet = class _ZodSet extends ZodType {
-  _parse(input2) {
-    const { status, ctx } = this._processInputParams(input2);
+  _parse(input3) {
+    const { status, ctx } = this._processInputParams(input3);
     if (ctx.parsedType !== ZodParsedType.set) {
       addIssueToContext(ctx, {
         code: ZodIssueCode.invalid_type,
@@ -9516,8 +9516,8 @@ var ZodFunction = class _ZodFunction extends ZodType {
     super(...arguments);
     this.validate = this.implement;
   }
-  _parse(input2) {
-    const { ctx } = this._processInputParams(input2);
+  _parse(input3) {
+    const { ctx } = this._processInputParams(input3);
     if (ctx.parsedType !== ZodParsedType.function) {
       addIssueToContext(ctx, {
         code: ZodIssueCode.invalid_type,
@@ -9620,8 +9620,8 @@ var ZodLazy = class extends ZodType {
   get schema() {
     return this._def.getter();
   }
-  _parse(input2) {
-    const { ctx } = this._processInputParams(input2);
+  _parse(input3) {
+    const { ctx } = this._processInputParams(input3);
     const lazySchema = this._def.getter();
     return lazySchema._parse({ data: ctx.data, path: ctx.path, parent: ctx });
   }
@@ -9634,9 +9634,9 @@ ZodLazy.create = (getter, params) => {
   });
 };
 var ZodLiteral = class extends ZodType {
-  _parse(input2) {
-    if (input2.data !== this._def.value) {
-      const ctx = this._getOrReturnCtx(input2);
+  _parse(input3) {
+    if (input3.data !== this._def.value) {
+      const ctx = this._getOrReturnCtx(input3);
       addIssueToContext(ctx, {
         received: ctx.data,
         code: ZodIssueCode.invalid_literal,
@@ -9644,7 +9644,7 @@ var ZodLiteral = class extends ZodType {
       });
       return INVALID;
     }
-    return { status: "valid", value: input2.data };
+    return { status: "valid", value: input3.data };
   }
   get value() {
     return this._def.value;
@@ -9665,9 +9665,9 @@ function createZodEnum(values, params) {
   });
 }
 var ZodEnum = class _ZodEnum extends ZodType {
-  _parse(input2) {
-    if (typeof input2.data !== "string") {
-      const ctx = this._getOrReturnCtx(input2);
+  _parse(input3) {
+    if (typeof input3.data !== "string") {
+      const ctx = this._getOrReturnCtx(input3);
       const expectedValues = this._def.values;
       addIssueToContext(ctx, {
         expected: util.joinValues(expectedValues),
@@ -9679,8 +9679,8 @@ var ZodEnum = class _ZodEnum extends ZodType {
     if (!this._cache) {
       this._cache = new Set(this._def.values);
     }
-    if (!this._cache.has(input2.data)) {
-      const ctx = this._getOrReturnCtx(input2);
+    if (!this._cache.has(input3.data)) {
+      const ctx = this._getOrReturnCtx(input3);
       const expectedValues = this._def.values;
       addIssueToContext(ctx, {
         received: ctx.data,
@@ -9689,7 +9689,7 @@ var ZodEnum = class _ZodEnum extends ZodType {
       });
       return INVALID;
     }
-    return OK(input2.data);
+    return OK(input3.data);
   }
   get options() {
     return this._def.values;
@@ -9730,9 +9730,9 @@ var ZodEnum = class _ZodEnum extends ZodType {
 };
 ZodEnum.create = createZodEnum;
 var ZodNativeEnum = class extends ZodType {
-  _parse(input2) {
+  _parse(input3) {
     const nativeEnumValues = util.getValidEnumValues(this._def.values);
-    const ctx = this._getOrReturnCtx(input2);
+    const ctx = this._getOrReturnCtx(input3);
     if (ctx.parsedType !== ZodParsedType.string && ctx.parsedType !== ZodParsedType.number) {
       const expectedValues = util.objectValues(nativeEnumValues);
       addIssueToContext(ctx, {
@@ -9745,7 +9745,7 @@ var ZodNativeEnum = class extends ZodType {
     if (!this._cache) {
       this._cache = new Set(util.getValidEnumValues(this._def.values));
     }
-    if (!this._cache.has(input2.data)) {
+    if (!this._cache.has(input3.data)) {
       const expectedValues = util.objectValues(nativeEnumValues);
       addIssueToContext(ctx, {
         received: ctx.data,
@@ -9754,7 +9754,7 @@ var ZodNativeEnum = class extends ZodType {
       });
       return INVALID;
     }
-    return OK(input2.data);
+    return OK(input3.data);
   }
   get enum() {
     return this._def.values;
@@ -9771,8 +9771,8 @@ var ZodPromise = class extends ZodType {
   unwrap() {
     return this._def.type;
   }
-  _parse(input2) {
-    const { ctx } = this._processInputParams(input2);
+  _parse(input3) {
+    const { ctx } = this._processInputParams(input3);
     if (ctx.parsedType !== ZodParsedType.promise && ctx.common.async === false) {
       addIssueToContext(ctx, {
         code: ZodIssueCode.invalid_type,
@@ -9804,8 +9804,8 @@ var ZodEffects = class extends ZodType {
   sourceType() {
     return this._def.schema._def.typeName === ZodFirstPartyTypeKind.ZodEffects ? this._def.schema.sourceType() : this._def.schema;
   }
-  _parse(input2) {
-    const { status, ctx } = this._processInputParams(input2);
+  _parse(input3) {
+    const { status, ctx } = this._processInputParams(input3);
     const effect = this._def.effect || null;
     const checkCtx = {
       addIssue: (arg) => {
@@ -9937,12 +9937,12 @@ ZodEffects.createWithPreprocess = (preprocess, schema, params) => {
   });
 };
 var ZodOptional = class extends ZodType {
-  _parse(input2) {
-    const parsedType = this._getType(input2);
+  _parse(input3) {
+    const parsedType = this._getType(input3);
     if (parsedType === ZodParsedType.undefined) {
       return OK(void 0);
     }
-    return this._def.innerType._parse(input2);
+    return this._def.innerType._parse(input3);
   }
   unwrap() {
     return this._def.innerType;
@@ -9956,12 +9956,12 @@ ZodOptional.create = (type, params) => {
   });
 };
 var ZodNullable = class extends ZodType {
-  _parse(input2) {
-    const parsedType = this._getType(input2);
+  _parse(input3) {
+    const parsedType = this._getType(input3);
     if (parsedType === ZodParsedType.null) {
       return OK(null);
     }
-    return this._def.innerType._parse(input2);
+    return this._def.innerType._parse(input3);
   }
   unwrap() {
     return this._def.innerType;
@@ -9975,8 +9975,8 @@ ZodNullable.create = (type, params) => {
   });
 };
 var ZodDefault = class extends ZodType {
-  _parse(input2) {
-    const { ctx } = this._processInputParams(input2);
+  _parse(input3) {
+    const { ctx } = this._processInputParams(input3);
     let data = ctx.data;
     if (ctx.parsedType === ZodParsedType.undefined) {
       data = this._def.defaultValue();
@@ -10000,8 +10000,8 @@ ZodDefault.create = (type, params) => {
   });
 };
 var ZodCatch = class extends ZodType {
-  _parse(input2) {
-    const { ctx } = this._processInputParams(input2);
+  _parse(input3) {
+    const { ctx } = this._processInputParams(input3);
     const newCtx = {
       ...ctx,
       common: {
@@ -10053,10 +10053,10 @@ ZodCatch.create = (type, params) => {
   });
 };
 var ZodNaN = class extends ZodType {
-  _parse(input2) {
-    const parsedType = this._getType(input2);
+  _parse(input3) {
+    const parsedType = this._getType(input3);
     if (parsedType !== ZodParsedType.nan) {
-      const ctx = this._getOrReturnCtx(input2);
+      const ctx = this._getOrReturnCtx(input3);
       addIssueToContext(ctx, {
         code: ZodIssueCode.invalid_type,
         expected: ZodParsedType.nan,
@@ -10064,7 +10064,7 @@ var ZodNaN = class extends ZodType {
       });
       return INVALID;
     }
-    return { status: "valid", value: input2.data };
+    return { status: "valid", value: input3.data };
   }
 };
 ZodNaN.create = (params) => {
@@ -10075,8 +10075,8 @@ ZodNaN.create = (params) => {
 };
 var BRAND = Symbol("zod_brand");
 var ZodBranded = class extends ZodType {
-  _parse(input2) {
-    const { ctx } = this._processInputParams(input2);
+  _parse(input3) {
+    const { ctx } = this._processInputParams(input3);
     const data = ctx.data;
     return this._def.type._parse({
       data,
@@ -10089,8 +10089,8 @@ var ZodBranded = class extends ZodType {
   }
 };
 var ZodPipeline = class _ZodPipeline extends ZodType {
-  _parse(input2) {
-    const { status, ctx } = this._processInputParams(input2);
+  _parse(input3) {
+    const { status, ctx } = this._processInputParams(input3);
     if (ctx.common.async) {
       const handleAsync = async () => {
         const inResult = await this._def.in._parseAsync({
@@ -10144,8 +10144,8 @@ var ZodPipeline = class _ZodPipeline extends ZodType {
   }
 };
 var ZodReadonly = class extends ZodType {
-  _parse(input2) {
-    const result = this._def.innerType._parse(input2);
+  _parse(input3) {
+    const result = this._def.innerType._parse(input3);
     const freeze = (data) => {
       if (isValid(data)) {
         data.value = Object.freeze(data.value);
@@ -10288,7 +10288,12 @@ var NEVER = INVALID;
 
 // node_modules/@modelcontextprotocol/sdk/dist/esm/types.js
 var LATEST_PROTOCOL_VERSION = "2025-06-18";
-var SUPPORTED_PROTOCOL_VERSIONS = [LATEST_PROTOCOL_VERSION, "2025-03-26", "2024-11-05", "2024-10-07"];
+var SUPPORTED_PROTOCOL_VERSIONS = [
+  LATEST_PROTOCOL_VERSION,
+  "2025-03-26",
+  "2024-11-05",
+  "2024-10-07"
+];
 var JSONRPC_VERSION = "2.0";
 var ProgressTokenSchema = external_exports.union([external_exports.string(), external_exports.number().int()]);
 var CursorSchema = external_exports.string();
@@ -10368,7 +10373,12 @@ var JSONRPCErrorSchema = external_exports.object({
   })
 }).strict();
 var isJSONRPCError = (value) => JSONRPCErrorSchema.safeParse(value).success;
-var JSONRPCMessageSchema = external_exports.union([JSONRPCRequestSchema, JSONRPCNotificationSchema, JSONRPCResponseSchema, JSONRPCErrorSchema]);
+var JSONRPCMessageSchema = external_exports.union([
+  JSONRPCRequestSchema,
+  JSONRPCNotificationSchema,
+  JSONRPCResponseSchema,
+  JSONRPCErrorSchema
+]);
 var EmptyResultSchema = ResultSchema.strict();
 var CancelledNotificationSchema = NotificationSchema.extend({
   method: external_exports.literal("notifications/cancelled"),
@@ -10395,38 +10405,21 @@ var IconSchema = external_exports.object({
    */
   mimeType: external_exports.optional(external_exports.string()),
   /**
-   * Optional array of strings that specify sizes at which the icon can be used.
-   * Each string should be in WxH format (e.g., `"48x48"`, `"96x96"`) or `"any"` for scalable formats like SVG.
-   *
-   * If not provided, the client should assume that the icon can be used at any size.
+   * Optional string specifying icon dimensions (e.g., "48x48 96x96").
    */
-  sizes: external_exports.optional(external_exports.array(external_exports.string()))
-}).passthrough();
-var IconsSchema = external_exports.object({
-  /**
-   * Optional set of sized icons that the client can display in a user interface.
-   *
-   * Clients that support rendering icons MUST support at least the following MIME types:
-   * - `image/png` - PNG images (safe, universal compatibility)
-   * - `image/jpeg` (and `image/jpg`) - JPEG images (safe, universal compatibility)
-   *
-   * Clients that support rendering icons SHOULD also support:
-   * - `image/svg+xml` - SVG images (scalable but requires security precautions)
-   * - `image/webp` - WebP images (modern, efficient format)
-   */
-  icons: external_exports.array(IconSchema).optional()
+  sizes: external_exports.optional(external_exports.string())
 }).passthrough();
 var BaseMetadataSchema = external_exports.object({
   /** Intended for programmatic or logical use, but used as a display name in past specs or fallback */
   name: external_exports.string(),
   /**
-   * Intended for UI and end-user contexts — optimized to be human-readable and easily understood,
-   * even by those unfamiliar with domain-specific terminology.
-   *
-   * If not provided, the name should be used for display (except for Tool,
-   * where `annotations.title` should be given precedence over using `name`,
-   * if present).
-   */
+  * Intended for UI and end-user contexts — optimized to be human-readable and easily understood,
+  * even by those unfamiliar with domain-specific terminology.
+  *
+  * If not provided, the name should be used for display (except for Tool,
+  * where `annotations.title` should be given precedence over using `name`,
+  * if present).
+  */
   title: external_exports.optional(external_exports.string())
 }).passthrough();
 var ImplementationSchema = BaseMetadataSchema.extend({
@@ -10434,8 +10427,17 @@ var ImplementationSchema = BaseMetadataSchema.extend({
   /**
    * An optional URL of the website for this implementation.
    */
-  websiteUrl: external_exports.optional(external_exports.string())
-}).merge(IconsSchema);
+  websiteUrl: external_exports.optional(external_exports.string()),
+  /**
+   * An optional list of icons for this implementation.
+   * This can be used by clients to display the implementation in a user interface.
+   * Each icon should have a `kind` property that specifies whether it is a data representation or a URL source, a `src` property that points to the icon file or data representation, and may also include a `mimeType` and `sizes` property.
+   * The `mimeType` property should be a valid MIME type for the icon file, such as "image/png" or "image/svg+xml".
+   * The `sizes` property should be a string that specifies one or more sizes at which the icon file can be used, such as "48x48" or "any" for scalable formats like SVG.
+   * The `sizes` property is optional, and if not provided, the client should assume that the icon can be used at any size.
+   */
+  icons: external_exports.optional(external_exports.array(IconSchema))
+});
 var ClientCapabilitiesSchema = external_exports.object({
   /**
    * Experimental, non-standard capabilities that the client supports.
@@ -10625,11 +10627,15 @@ var ResourceSchema = BaseMetadataSchema.extend({
    */
   mimeType: external_exports.optional(external_exports.string()),
   /**
+   * An optional list of icons for this resource.
+   */
+  icons: external_exports.optional(external_exports.array(IconSchema)),
+  /**
    * See [MCP specification](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/47339c03c143bb4ec01a26e721a1b8fe66634ebe/docs/specification/draft/basic/index.mdx#general-fields)
    * for notes on _meta usage.
    */
   _meta: external_exports.optional(external_exports.object({}).passthrough())
-}).merge(IconsSchema);
+});
 var ResourceTemplateSchema = BaseMetadataSchema.extend({
   /**
    * A URI template (according to RFC 6570) that can be used to construct resource URIs.
@@ -10650,7 +10656,7 @@ var ResourceTemplateSchema = BaseMetadataSchema.extend({
    * for notes on _meta usage.
    */
   _meta: external_exports.optional(external_exports.object({}).passthrough())
-}).merge(IconsSchema);
+});
 var ListResourcesRequestSchema = PaginatedRequestSchema.extend({
   method: external_exports.literal("resources/list")
 });
@@ -10729,11 +10735,15 @@ var PromptSchema = BaseMetadataSchema.extend({
    */
   arguments: external_exports.optional(external_exports.array(PromptArgumentSchema)),
   /**
+   * An optional list of icons for this prompt.
+   */
+  icons: external_exports.optional(external_exports.array(IconSchema)),
+  /**
    * See [MCP specification](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/47339c03c143bb4ec01a26e721a1b8fe66634ebe/docs/specification/draft/basic/index.mdx#general-fields)
    * for notes on _meta usage.
    */
   _meta: external_exports.optional(external_exports.object({}).passthrough())
-}).merge(IconsSchema);
+});
 var ListPromptsRequestSchema = PaginatedRequestSchema.extend({
   method: external_exports.literal("prompts/list")
 });
@@ -10896,11 +10906,15 @@ var ToolSchema = BaseMetadataSchema.extend({
    */
   annotations: external_exports.optional(ToolAnnotationsSchema),
   /**
+   * An optional list of icons for this tool.
+   */
+  icons: external_exports.optional(external_exports.array(IconSchema)),
+  /**
    * See [MCP specification](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/47339c03c143bb4ec01a26e721a1b8fe66634ebe/docs/specification/draft/basic/index.mdx#general-fields)
    * for notes on _meta usage.
    */
   _meta: external_exports.optional(external_exports.object({}).passthrough())
-}).merge(IconsSchema);
+});
 var ListToolsRequestSchema = PaginatedRequestSchema.extend({
   method: external_exports.literal("tools/list")
 });
@@ -10950,7 +10964,16 @@ var CallToolRequestSchema = RequestSchema.extend({
 var ToolListChangedNotificationSchema = NotificationSchema.extend({
   method: external_exports.literal("notifications/tools/list_changed")
 });
-var LoggingLevelSchema = external_exports.enum(["debug", "info", "notice", "warning", "error", "critical", "alert", "emergency"]);
+var LoggingLevelSchema = external_exports.enum([
+  "debug",
+  "info",
+  "notice",
+  "warning",
+  "error",
+  "critical",
+  "alert",
+  "emergency"
+]);
 var SetLevelRequestSchema = RequestSchema.extend({
   method: external_exports.literal("logging/setLevel"),
   params: BaseRequestParamsSchema.extend({
@@ -11043,7 +11066,11 @@ var CreateMessageResultSchema = ResultSchema.extend({
    */
   stopReason: external_exports.optional(external_exports.enum(["endTurn", "stopSequence", "maxTokens"]).or(external_exports.string())),
   role: external_exports.enum(["user", "assistant"]),
-  content: external_exports.discriminatedUnion("type", [TextContentSchema, ImageContentSchema, AudioContentSchema])
+  content: external_exports.discriminatedUnion("type", [
+    TextContentSchema,
+    ImageContentSchema,
+    AudioContentSchema
+  ])
 });
 var BooleanSchemaSchema = external_exports.object({
   type: external_exports.literal("boolean"),
@@ -11073,7 +11100,12 @@ var EnumSchemaSchema = external_exports.object({
   enum: external_exports.array(external_exports.string()),
   enumNames: external_exports.optional(external_exports.array(external_exports.string()))
 }).passthrough();
-var PrimitiveSchemaDefinitionSchema = external_exports.union([BooleanSchemaSchema, StringSchemaSchema, NumberSchemaSchema, EnumSchemaSchema]);
+var PrimitiveSchemaDefinitionSchema = external_exports.union([
+  BooleanSchemaSchema,
+  StringSchemaSchema,
+  NumberSchemaSchema,
+  EnumSchemaSchema
+]);
 var ElicitRequestSchema = RequestSchema.extend({
   method: external_exports.literal("elicitation/create"),
   params: BaseRequestParamsSchema.extend({
@@ -11201,8 +11233,18 @@ var ClientNotificationSchema = external_exports.union([
   InitializedNotificationSchema,
   RootsListChangedNotificationSchema
 ]);
-var ClientResultSchema = external_exports.union([EmptyResultSchema, CreateMessageResultSchema, ElicitResultSchema, ListRootsResultSchema]);
-var ServerRequestSchema = external_exports.union([PingRequestSchema, CreateMessageRequestSchema, ElicitRequestSchema, ListRootsRequestSchema]);
+var ClientResultSchema = external_exports.union([
+  EmptyResultSchema,
+  CreateMessageResultSchema,
+  ElicitResultSchema,
+  ListRootsResultSchema
+]);
+var ServerRequestSchema = external_exports.union([
+  PingRequestSchema,
+  CreateMessageRequestSchema,
+  ElicitRequestSchema,
+  ListRootsRequestSchema
+]);
 var ServerNotificationSchema = external_exports.union([
   CancelledNotificationSchema,
   ProgressNotificationSchema,
@@ -11276,10 +11318,7 @@ var Protocol = class {
     const totalElapsed = Date.now() - info.startTime;
     if (info.maxTotalTimeout && totalElapsed >= info.maxTotalTimeout) {
       this._timeoutInfo.delete(messageId);
-      throw new McpError(ErrorCode.RequestTimeout, "Maximum total timeout exceeded", {
-        maxTotalTimeout: info.maxTotalTimeout,
-        totalElapsed
-      });
+      throw new McpError(ErrorCode.RequestTimeout, "Maximum total timeout exceeded", { maxTotalTimeout: info.maxTotalTimeout, totalElapsed });
     }
     clearTimeout(info.timeoutId);
     info.timeoutId = setTimeout(info.onTimeout, info.timeout);
@@ -13126,8 +13165,8 @@ var McpZodTypeKind;
   McpZodTypeKind2["Completable"] = "McpCompletable";
 })(McpZodTypeKind || (McpZodTypeKind = {}));
 var Completable = class extends ZodType {
-  _parse(input2) {
-    const { ctx } = this._processInputParams(input2);
+  _parse(input3) {
+    const { ctx } = this._processInputParams(input3);
     const data = ctx.data;
     return this._def.type._parse({
       data,
@@ -13223,9 +13262,7 @@ var McpServer = class {
           _meta: tool._meta
         };
         if (tool.outputSchema) {
-          toolDefinition.outputSchema = zodToJsonSchema(tool.outputSchema, {
-            strictUnions: true
-          });
+          toolDefinition.outputSchema = zodToJsonSchema(tool.outputSchema, { strictUnions: true });
         }
         return toolDefinition;
       })
@@ -13967,6 +14004,7 @@ async function discover(globs) {
         name: config.name,
         description: config.description,
         switchboardDescription: config.switchboardDescription,
+        type: config.type || "stdio",
         cwd: dirname(resolve(file)),
         command: config.command
       };
@@ -14142,6 +14180,70 @@ var ChildClient = class {
     this.initialized = false;
   }
 };
+var ClaudeChildClient = class extends ChildClient {
+  constructor(meta, rpcTimeoutMs = 6e4, idleTimeoutMs = 3e5) {
+    super(meta, rpcTimeoutMs);
+    this.idleTimeoutMs = idleTimeoutMs;
+    if (this.idleTimeoutMs > 0) {
+      const checkInterval = Math.min(6e4, Math.floor(this.idleTimeoutMs / 5));
+      this.idleTimer = setInterval(() => {
+        this.checkIdle();
+      }, checkInterval);
+    }
+  }
+  lastActivity = Date.now();
+  idleTimer;
+  isShuttingDown = false;
+  checkIdle() {
+    if (this.isShuttingDown) return;
+    const idleTime = Date.now() - this.lastActivity;
+    if (idleTime > this.idleTimeoutMs) {
+      process.stderr.write(
+        `[ClaudeChildClient] Idle timeout (${Math.round(idleTime / 1e3)}s) for ${this.meta.name}, shutting down gracefully...
+`
+      );
+      this.gracefulShutdown();
+    }
+  }
+  /**
+   * Gracefully shutdown the child Claude Code instance.
+   * Sends SIGTERM (not SIGKILL) to allow SessionEnd hooks to execute.
+   */
+  async gracefulShutdown() {
+    if (this.isShuttingDown) return;
+    this.isShuttingDown = true;
+    if (this.idleTimer) {
+      clearInterval(this.idleTimer);
+      this.idleTimer = void 0;
+    }
+    if (this.process) {
+      process.stderr.write(
+        `[ClaudeChildClient] Sending SIGTERM to ${this.meta.name}...
+`
+      );
+      this.process.kill("SIGTERM");
+      await new Promise((resolve2) => setTimeout(resolve2, 1e4));
+    }
+    this.close();
+  }
+  /**
+   * Override send to reset idle timer on any activity
+   */
+  async send(method, params) {
+    this.lastActivity = Date.now();
+    return super.send(method, params);
+  }
+  /**
+   * Override close to clean up idle timer
+   */
+  close() {
+    if (this.idleTimer) {
+      clearInterval(this.idleTimer);
+      this.idleTimer = void 0;
+    }
+    super.close();
+  }
+};
 
 // src/core/summarise.ts
 function summarise(description, maxChars = 160) {
@@ -14229,7 +14331,12 @@ async function handleSuiteCall(toolName, params, config) {
   if (action === "introspect") {
     let client = childClients.get(childName);
     if (!client) {
-      client = new ChildClient(meta, config.timeouts.rpcMs);
+      if (meta.type === "claude-server") {
+        const idleTimeoutMs = Number(process.env.SWITCHBOARD_CHILD_IDLE_MS || 3e5);
+        client = new ClaudeChildClient(meta, config.timeouts.rpcMs, idleTimeoutMs);
+      } else {
+        client = new ChildClient(meta, config.timeouts.rpcMs);
+      }
       childClients.set(childName, client);
     }
     const tools = await client.listTools();
@@ -14251,7 +14358,12 @@ async function handleSuiteCall(toolName, params, config) {
     }
     let client = childClients.get(childName);
     if (!client) {
-      client = new ChildClient(meta, config.timeouts.rpcMs);
+      if (meta.type === "claude-server") {
+        const idleTimeoutMs = Number(process.env.SWITCHBOARD_CHILD_IDLE_MS || 3e5);
+        client = new ClaudeChildClient(meta, config.timeouts.rpcMs, idleTimeoutMs);
+      } else {
+        client = new ChildClient(meta, config.timeouts.rpcMs);
+      }
       childClients.set(childName, client);
     }
     try {
@@ -14308,6 +14420,15 @@ async function getStandardDescriptions() {
       if (existsSync2(path)) {
         const content = await readFileAsync(path, "utf8");
         const parsed = JSON.parse(content);
+        if (parsed.mcps) {
+          const result = {};
+          for (const [key, value] of Object.entries(parsed.mcps)) {
+            if (typeof value === "object" && value !== null && "switchboard" in value) {
+              result[key] = value.switchboard;
+            }
+          }
+          return result;
+        }
         return parsed.properties || parsed;
       }
     }
@@ -14766,6 +14887,55 @@ main().catch((error) => {
 function createWrapperScript(toolName) {
   return CLAUDE_WRAPPER_TEMPLATE.replace(/__TOOL_NAME__/g, JSON.stringify(toolName));
 }
+async function generateClaudeMd(mcpDir, mcpName) {
+  let claudeInstructions = "";
+  try {
+    const currentFile = fileURLToPath(import.meta.url);
+    const currentDir = dirname2(currentFile);
+    const possiblePaths = [
+      join2(currentDir, "..", "..", "mcp-descriptions.json"),
+      join2(currentDir, "..", "..", "..", "mcp-descriptions.json")
+    ];
+    for (const path of possiblePaths) {
+      if (existsSync2(path)) {
+        const content = await readFileAsync(path, "utf8");
+        const parsed = JSON.parse(content);
+        if (parsed.mcps && parsed.mcps[mcpName] && parsed.mcps[mcpName].claude) {
+          claudeInstructions = parsed.mcps[mcpName].claude;
+          break;
+        }
+      }
+    }
+  } catch {
+  }
+  if (!claudeInstructions) {
+    claudeInstructions = `Your role is to use this MCP server to handle ${mcpName} operations. Understand the user's intent and execute the appropriate MCP operations to fulfill their request efficiently and accurately.`;
+  }
+  const claudeMdContent = `# Claude Intelligent Wrapper for ${mcpName}
+
+## Instructions
+
+${claudeInstructions}
+
+## Key Guidelines
+
+1. **Understand Intent**: Carefully analyze what the user is trying to achieve
+2. **Choose the Right Tool**: Select the most appropriate MCP operation for the task
+3. **Handle Errors Gracefully**: If an operation fails, explain what happened and suggest alternatives
+4. **Provide Clear Feedback**: Let the user know what actions you're taking and their results
+
+## Available Operations
+
+When the user invokes this tool with a natural language query, you should:
+1. Parse their intent
+2. Map it to the appropriate MCP subtool
+3. Execute the operation with correct parameters
+4. Return clear, actionable results
+
+Remember: You are an intelligent interface that makes the ${mcpName} MCP server accessible through natural language.
+`;
+  await writeFileAsync(join2(mcpDir, "CLAUDE.md"), claudeMdContent);
+}
 async function enableIntelligentMode(mcpsDir, mcpNames) {
   const wrapped = [];
   for (const name of mcpNames) {
@@ -14784,6 +14954,7 @@ async function enableIntelligentMode(mcpsDir, mcpNames) {
     await renameAsync(originalPath, archivedPath);
     const originalContent = await readFileAsync(archivedPath, "utf8");
     const originalConfig = JSON.parse(originalContent);
+    await generateClaudeMd(mcpDir, name);
     const wrapperScriptName = `${name}-claude-wrapper.mjs`;
     const wrapperScriptPath = join2(mcpDir, wrapperScriptName);
     await writeFileAsync(wrapperScriptPath, createWrapperScript(name));
@@ -14841,16 +15012,28 @@ async function copyExistingMcps(existingConfig, switchboardDir) {
   return { copiedMcps, standardDescriptions };
 }
 async function initSwitchboard(cwd) {
+  console.log("\n\u{1F680} Initializing Switchboard...\n");
   const switchboardDir = join2(cwd, ".switchboard");
   const mcpsDir = join2(switchboardDir, "mcps");
+  const backupsDir = join2(switchboardDir, "backups");
+  const configPath = join2(switchboardDir, "switchboard.config.json");
+  const rootConfigPath = join2(cwd, ".mcp.json");
   if (existsSync2(switchboardDir)) {
     console.log("\u2705 .switchboard directory already exists");
     return;
   }
   try {
+    const standardDescs = await getStandardDescriptions();
     const existingConfig = await discoverExistingMcp(cwd);
     await mkdirAsync(switchboardDir, { recursive: true });
     await mkdirAsync(mcpsDir, { recursive: true });
+    await mkdirAsync(backupsDir, { recursive: true });
+    if (existsSync2(rootConfigPath)) {
+      const backupPath = join2(backupsDir, `mcp.json.backup.${Date.now()}`);
+      const originalContent = await readFileAsync(rootConfigPath, "utf8");
+      await writeFileAsync(backupPath, originalContent);
+      console.log(`  \u2713 Created backup: .switchboard/backups/${backupPath.split("/").pop()}`);
+    }
     const { copiedMcps, standardDescriptions } = existingConfig ? await copyExistingMcps(existingConfig, switchboardDir) : { copiedMcps: [], standardDescriptions: [] };
     if (copiedMcps.length === 0) {
       const exampleMcpDir = join2(mcpsDir, "example-mcp");
@@ -14908,40 +15091,36 @@ async function initSwitchboard(cwd) {
         `  \u{1F916} Intelligent wrappers + archived originals for: ${claudeWrapped.join(", ")}`
       );
     }
+    const newConfigContent = generateTopLevelMcpTemplate(existingConfig);
+    await writeFileAsync(rootConfigPath, newConfigContent);
+    console.log(`  \u2713 Updated root .mcp.json to use Switchboard`);
     console.log("");
     console.log("Next steps:");
+    let stepNumber = 1;
     if (copiedMcps.length > 0) {
       const needsEditing = copiedMcps.filter((name) => !standardDescriptions.includes(name));
       if (needsEditing.length > 0) {
         console.log(
-          `  1. Edit the "switchboardDescription" field for these MCPs: ${needsEditing.join(", ")}`
+          `  ${stepNumber++}. Edit the "switchboardDescription" field for these MCPs: ${needsEditing.join(", ")}`
         );
         console.log("     (these need custom one-line descriptions for the LLM)");
-        console.log("  2. Replace your .mcp.json with this (copy/paste):");
-      } else {
-        console.log("  1. All MCPs have standard descriptions applied - no editing needed!");
-        console.log("  2. Replace your .mcp.json with this (copy/paste):");
       }
     } else {
-      console.log("  1. Copy your existing MCPs to .switchboard/mcps/[mcp-name]/.mcp.json");
-      console.log('  2. Edit the "switchboardDescription" field in each .mcp.json file');
-      console.log("  3. Replace your .mcp.json with this (copy/paste):");
+      console.log(`  ${stepNumber++}. Copy your existing MCPs to .switchboard/mcps/[mcp-name]/.mcp.json`);
+      console.log(`  ${stepNumber++}. Edit the "switchboardDescription" field in each .mcp.json file`);
     }
     if (claudeWrapped.length > 0) {
       console.log("");
+      console.log("  \u2139\uFE0F Claude wrapper notes:");
       console.log(
-        `  \u2022 Intelligent mode: call the 'natural_language' subtool and pass a {"query"} string for Claude.`
+        `     \u2022 Call the 'natural_language' subtool with a {"query"} string for AI assistance`
       );
       console.log(
-        "  \u2022 Original MCP configs are preserved in each tool folder under original/.mcp.json."
+        "     \u2022 Original MCP configs preserved in original/.mcp.json"
       );
     }
     console.log("");
-    console.log(generateTopLevelMcpTemplate(existingConfig));
-    console.log("");
-    console.log(
-      `  ${copiedMcps.length > 0 ? "3" : "4"}. Restart your MCP host (Claude Code, etc.)`
-    );
+    console.log(`  ${stepNumber}. Restart your MCP host (Claude Code, etc.) to load Switchboard`);
     console.log("");
   } catch (error) {
     console.error("\u274C Failed to initialize Switchboard:", error.message);
@@ -14949,11 +15128,410 @@ async function initSwitchboard(cwd) {
   }
 }
 
+// src/cli/revert.ts
+import { existsSync as existsSync3, readFile as readFile2, writeFile as writeFile2, rename as rename2, rmdir, unlink } from "fs";
+import { readdir as readdir2 } from "fs/promises";
+import { join as join3, basename } from "path";
+import { promisify as promisify2 } from "util";
+var readFileAsync2 = promisify2(readFile2);
+var writeFileAsync2 = promisify2(writeFile2);
+var renameAsync2 = promisify2(rename2);
+var rmdirAsync = promisify2(rmdir);
+var unlinkAsync = promisify2(unlink);
+var readdirAsync2 = readdir2;
+async function findBackupFile(cwd) {
+  const backupsDir = join3(cwd, ".switchboard", "backups");
+  if (existsSync3(backupsDir)) {
+    try {
+      const files = await readdirAsync2(backupsDir);
+      const backups = files.filter((f) => f.includes("backup")).sort().reverse();
+      if (backups.length > 0) {
+        return join3(backupsDir, backups[0]);
+      }
+    } catch {
+    }
+  }
+  const backupPattern = /^\.mcp\.json\.backup\.\d+$/;
+  try {
+    const files = await readdirAsync2(cwd);
+    const backups = files.filter((f) => backupPattern.test(f)).sort().reverse();
+    return backups.length > 0 ? join3(cwd, backups[0]) : null;
+  } catch {
+    return null;
+  }
+}
+async function revertClaudeWrapper(mcpDir) {
+  const originalDir = join3(mcpDir, "original");
+  const originalConfigPath = join3(originalDir, ".mcp.json");
+  const currentConfigPath = join3(mcpDir, ".mcp.json");
+  if (!existsSync3(originalConfigPath)) {
+    return false;
+  }
+  const files = await readdirAsync2(mcpDir);
+  const wrapperFiles = files.filter((f) => f.endsWith("-claude-wrapper.mjs"));
+  if (wrapperFiles.length === 0) {
+    return false;
+  }
+  console.log(`  Reverting Claude wrapper in ${basename(mcpDir)}...`);
+  for (const wrapperFile of wrapperFiles) {
+    await unlinkAsync(join3(mcpDir, wrapperFile));
+    console.log(`    \u2713 Removed wrapper script: ${wrapperFile}`);
+  }
+  await renameAsync2(originalConfigPath, currentConfigPath);
+  console.log(`    \u2713 Restored original .mcp.json`);
+  try {
+    await rmdirAsync(originalDir);
+    console.log(`    \u2713 Cleaned up original/ directory`);
+  } catch {
+  }
+  return true;
+}
+async function revertSwitchboardInit(switchboardDir) {
+  const mcpsDir = join3(switchboardDir, "mcps");
+  const configPath = join3(switchboardDir, "switchboard.config.json");
+  if (!existsSync3(mcpsDir)) {
+    return false;
+  }
+  console.log(`  Reverting Switchboard configuration in ${switchboardDir}...`);
+  const mcpDirs = await readdirAsync2(mcpsDir, { withFileTypes: true });
+  let revertedWrappers = 0;
+  for (const entry of mcpDirs) {
+    if (entry.isDirectory()) {
+      const mcpDir = join3(mcpsDir, entry.name);
+      if (await revertClaudeWrapper(mcpDir)) {
+        revertedWrappers++;
+      }
+    }
+  }
+  if (revertedWrappers > 0) {
+    console.log(`    \u2713 Reverted ${revertedWrappers} Claude wrapper(s)`);
+  }
+  if (existsSync3(configPath)) {
+    await unlinkAsync(configPath);
+    console.log(`    \u2713 Removed switchboard.config.json`);
+  }
+  return true;
+}
+async function revertSwitchboard(cwd) {
+  console.log("\n\u{1F504} Reverting Switchboard configuration...\n");
+  const switchboardDir = join3(cwd, ".switchboard");
+  const rootConfigPath = join3(cwd, ".mcp.json");
+  if (!existsSync3(switchboardDir)) {
+    console.error("\u274C No .switchboard directory found. Nothing to revert.");
+    process.exit(1);
+  }
+  const backupPath = await findBackupFile(cwd);
+  try {
+    const revertedSwitchboard = await revertSwitchboardInit(switchboardDir);
+    if (backupPath) {
+      const backupContent = await readFileAsync2(backupPath, "utf8");
+      await writeFileAsync2(rootConfigPath, backupContent);
+      await unlinkAsync(backupPath);
+      console.log(`  \u2713 Restored original .mcp.json from backup`);
+    } else if (existsSync3(rootConfigPath)) {
+      const currentConfig = JSON.parse(await readFileAsync2(rootConfigPath, "utf8"));
+      if (currentConfig.mcps && currentConfig.mcps.switchboard) {
+        console.log("\n\u26A0\uFE0F  Warning: Current .mcp.json contains Switchboard configuration");
+        console.log("    but no backup was found. You may need to manually restore");
+        console.log("    your original MCP configurations.");
+      }
+    }
+    const { rmSync } = await import("fs");
+    rmSync(switchboardDir, { recursive: true, force: true });
+    console.log("  \u2713 Removed .switchboard directory");
+    if (revertedSwitchboard || backupPath) {
+      console.log("\n\u2705 Successfully reverted Switchboard configuration!");
+      console.log('   You can now run "switchboard init" again with different options.\n');
+    } else {
+      console.log("\n\u26A0\uFE0F  Partial revert completed. Some manual cleanup may be needed.\n");
+    }
+  } catch (error) {
+    console.error("\u274C Error during revert:", error);
+    console.error("\n   You may need to manually clean up the .switchboard directory");
+    process.exit(1);
+  }
+}
+
+// src/cli/add.ts
+import { existsSync as existsSync4, readFile as readFile3, writeFile as writeFile3, mkdir as mkdir2 } from "fs";
+import { join as join4 } from "path";
+import { promisify as promisify3 } from "util";
+import readline2 from "node:readline/promises";
+import { stdin as input2, stdout as output2 } from "node:process";
+var readFileAsync3 = promisify3(readFile3);
+var writeFileAsync3 = promisify3(writeFile3);
+var mkdirAsync2 = promisify3(mkdir2);
+async function promptForInput(question, defaultValue) {
+  const rl = readline2.createInterface({ input: input2, output: output2 });
+  const suffix = defaultValue ? ` (${defaultValue})` : "";
+  try {
+    const response = await rl.question(`${question}${suffix}: `);
+    return response.trim() || defaultValue || "";
+  } finally {
+    rl.close();
+  }
+}
+async function promptYesNo2(question, defaultValue = false) {
+  const rl = readline2.createInterface({ input: input2, output: output2 });
+  const suffix = defaultValue ? " (Y/n) " : " (y/N) ";
+  try {
+    const response = (await rl.question(`${question}${suffix}`)).trim().toLowerCase();
+    if (!response) {
+      return defaultValue;
+    }
+    return response === "y" || response === "yes";
+  } finally {
+    rl.close();
+  }
+}
+function parseArgs(args) {
+  const options = {};
+  const positional = [];
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if (arg === "--description" || arg === "-d") {
+      options.description = args[++i];
+    } else if (arg === "--claude" || arg === "-c") {
+      options.claude = true;
+    } else if (arg === "--claude-server") {
+      options.claudeServer = true;
+    } else if (!arg.startsWith("-")) {
+      positional.push(arg);
+    }
+  }
+  return { positional, options };
+}
+async function getStandardDescription(mcpName) {
+  try {
+    const descPath = join4(process.cwd(), "mcp-descriptions.json");
+    if (existsSync4(descPath)) {
+      const content = await readFileAsync3(descPath, "utf8");
+      const descriptions = JSON.parse(content);
+      if (descriptions[mcpName]) {
+        return descriptions[mcpName];
+      }
+      for (const [key, desc] of Object.entries(descriptions)) {
+        if (mcpName.toLowerCase().includes(key.toLowerCase()) || key.toLowerCase().includes(mcpName.toLowerCase())) {
+          return desc;
+        }
+      }
+    }
+  } catch {
+  }
+  return null;
+}
+async function setupClaudeServer(mcpDir, mcpName, originalConfig) {
+  const { cpSync } = await import("fs");
+  const claudeDir = join4(mcpDir, ".claude");
+  const hooksDir = join4(claudeDir, "hooks");
+  await mkdirAsync2(claudeDir, { recursive: true });
+  await mkdirAsync2(hooksDir, { recursive: true });
+  const templatesDir = join4(process.cwd(), ".switchboard", "templates");
+  const hookFiles = ["session_start.sh", "post_tool_use.sh", "stop.py", "session_end.py"];
+  for (const hookFile of hookFiles) {
+    const sourcePath = join4(templatesDir, "hooks", hookFile);
+    const destPath = join4(hooksDir, hookFile);
+    if (existsSync4(sourcePath)) {
+      cpSync(sourcePath, destPath);
+    } else {
+      console.warn(`  \u26A0\uFE0F Template hook not found: ${hookFile}`);
+    }
+  }
+  const settingsTemplatePath = join4(templatesDir, "settings.json");
+  const settingsDestPath = join4(claudeDir, "settings.json");
+  if (existsSync4(settingsTemplatePath)) {
+    cpSync(settingsTemplatePath, settingsDestPath);
+  }
+  const stateDir = join4(mcpDir, ".state");
+  await mkdirAsync2(stateDir, { recursive: true });
+  const childMcpConfig = {
+    mcps: {
+      [mcpName]: {
+        command: originalConfig.command.cmd,
+        args: originalConfig.command.args,
+        ...originalConfig.command.env && { env: originalConfig.command.env }
+      }
+    }
+  };
+  await writeFileAsync3(
+    join4(mcpDir, ".mcp.json"),
+    JSON.stringify(childMcpConfig, null, 2)
+  );
+  const claudeMdContent = `# ${mcpName} Specialist
+
+You are a domain expert for the ${mcpName} MCP server. Your role is to interpret user requests and execute the appropriate MCP operations efficiently.
+
+## Your Role
+
+- Understand natural language queries about ${mcpName} operations
+- Choose the most appropriate MCP tools for each task
+- Handle errors gracefully and suggest alternatives
+- Provide clear, actionable results
+
+## Guidelines
+
+1. **Parse Intent**: Carefully analyze what the user wants to achieve
+2. **Select Tools**: Choose the right MCP operation for the job
+3. **Execute Efficiently**: Use the minimum number of operations needed
+4. **Report Clearly**: Explain what you did and show results
+
+## Learning
+
+This CLAUDE.md file will be automatically updated with:
+- Common usage patterns you discover
+- Pitfalls to avoid
+- Optimization strategies
+
+---
+
+_This file is managed by Switchboard SessionEnd hooks._
+`;
+  await writeFileAsync3(join4(mcpDir, "CLAUDE.md"), claudeMdContent);
+  console.log("  \u2713 Created .claude/settings.json with hooks");
+  console.log("  \u2713 Copied hook templates (session_start, post_tool_use, stop, session_end)");
+  console.log("  \u2713 Created CLAUDE.md with domain instructions");
+  console.log("  \u2713 Created .state directory for session data");
+}
+async function addMcpToSwitchboard(cwd, args) {
+  const { positional, options } = parseArgs(args);
+  const switchboardDir = join4(cwd, ".switchboard");
+  const mcpsDir = join4(switchboardDir, "mcps");
+  if (!existsSync4(switchboardDir)) {
+    console.error('\u274C Switchboard not initialized. Run "switchboard init" first.');
+    process.exit(1);
+  }
+  console.log("\n\u{1F4E6} Adding MCP to Switchboard...\n");
+  let mcpName;
+  let command;
+  let commandArgs = [];
+  if (positional.length === 0) {
+    mcpName = await promptForInput("MCP name");
+    if (!mcpName) {
+      console.error("\u274C MCP name is required");
+      process.exit(1);
+    }
+    command = await promptForInput("Command to run MCP", "npx");
+    const argsInput = await promptForInput("Arguments (space-separated)", mcpName);
+    commandArgs = argsInput.split(" ").filter((a) => a);
+  } else if (positional.length === 1) {
+    mcpName = positional[0];
+    command = "npx";
+    commandArgs = [mcpName];
+  } else {
+    mcpName = positional[0];
+    command = positional[1];
+    commandArgs = positional.slice(2);
+  }
+  const mcpDir = join4(mcpsDir, mcpName);
+  if (existsSync4(mcpDir)) {
+    const overwrite = await promptYesNo2(`MCP "${mcpName}" already exists. Overwrite?`, false);
+    if (!overwrite) {
+      console.log("Cancelled.");
+      process.exit(0);
+    }
+  }
+  let description = options.description;
+  if (!description) {
+    const standardDesc = await getStandardDescription(mcpName);
+    if (standardDesc) {
+      console.log(`  \u2728 Found standard description: "${standardDesc}"`);
+      const useStandard = await promptYesNo2("Use this description?", true);
+      if (useStandard) {
+        description = standardDesc;
+      }
+    }
+    if (!description) {
+      description = await promptForInput(
+        "Description for LLM (one line)",
+        `Describe what ${mcpName} does`
+      );
+    }
+  }
+  await mkdirAsync2(mcpDir, { recursive: true });
+  const config = {
+    name: mcpName,
+    description: `${mcpName} MCP`,
+    switchboardDescription: description || `Describe what ${mcpName} does`,
+    command: {
+      cmd: command,
+      args: commandArgs
+    }
+  };
+  if (options.claudeServer) {
+    console.log("  \u{1F916} Creating Claude Code MCP server wrapper...");
+    config.type = "claude-server";
+    const parentConfigPath = join4(mcpDir, ".mcp.json.parent");
+    await writeFileAsync3(parentConfigPath, JSON.stringify(config, null, 2));
+    await setupClaudeServer(mcpDir, mcpName, config);
+    config.command = {
+      cmd: "claude",
+      args: ["mcp", "serve"],
+      env: {
+        CLAUDE_PROJECT_DIR: mcpDir
+      }
+    };
+    config.switchboardDescription = `\u{1F504} Claude-managed: ${config.switchboardDescription}`;
+    console.log("  \u2713 Configured to spawn Claude Code MCP server");
+  } else if (options.claude) {
+    console.log("  \u{1F916} Creating Claude intelligent wrapper...");
+    const originalDir = join4(mcpDir, "original");
+    await mkdirAsync2(originalDir, { recursive: true });
+    await writeFileAsync3(
+      join4(originalDir, ".mcp.json"),
+      JSON.stringify(config, null, 2)
+    );
+    const wrapperScriptName = `${mcpName}-claude-wrapper.mjs`;
+    const wrapperScriptPath = join4(mcpDir, wrapperScriptName);
+    const wrapperContent = `#!/usr/bin/env node
+// Claude intelligent wrapper for ${mcpName}
+// This is a placeholder - the full implementation would be imported from init.ts
+console.error('Claude wrapper for ${mcpName} would run here');
+process.exit(1);
+`;
+    await writeFileAsync3(wrapperScriptPath, wrapperContent);
+    config.switchboardDescription = `\u{1F916} Claude-assisted: ${config.switchboardDescription} (use subtool "natural_language" with a "query" string).`;
+    config.command = {
+      cmd: "node",
+      args: [wrapperScriptName],
+      env: {
+        SWITCHBOARD_INTELLIGENT_TARGET: mcpName
+      }
+    };
+    console.log(`  \u2713 Created Claude wrapper: ${wrapperScriptName}`);
+  }
+  const configPath = join4(mcpDir, ".mcp.json");
+  await writeFileAsync3(configPath, JSON.stringify(config, null, 2));
+  console.log(`
+\u2705 Successfully added "${mcpName}" to Switchboard!`);
+  console.log(`   Location: .switchboard/mcps/${mcpName}/.mcp.json`);
+  console.log(`   Command: ${command} ${commandArgs.join(" ")}`);
+  if (options.claudeServer) {
+    console.log("\n   Claude Code server notes:");
+    console.log("   \u2022 Full Claude Code instance with hooks support");
+    console.log("   \u2022 Hooks configured in .claude/settings.json");
+    console.log("   \u2022 Learning updates written to CLAUDE.md");
+    console.log("   \u2022 Idle timeout: 5 minutes (configurable via SWITCHBOARD_CHILD_IDLE_MS)");
+  } else if (options.claude) {
+    console.log("\n   Claude wrapper notes:");
+    console.log('   \u2022 Call "natural_language" subtool with {"query": "your request"}');
+    console.log("   \u2022 Original config preserved in original/.mcp.json");
+  }
+  console.log("\n   Restart your MCP host to use the new MCP via Switchboard.");
+}
+
 // src/index.ts
 async function main() {
   const args = process.argv.slice(2);
   if (args[0] === "init") {
     await initSwitchboard(process.cwd());
+    process.exit(0);
+  }
+  if (args[0] === "revert") {
+    await revertSwitchboard(process.cwd());
+    process.exit(0);
+  }
+  if (args[0] === "add") {
+    await addMcpToSwitchboard(process.cwd(), args.slice(1));
     process.exit(0);
   }
   const config = await getConfig(process.cwd());

@@ -40,43 +40,124 @@ cd your-project
 switchboard init
 ```
 
-Migrates existing `.mcp.json` and creates `.switchboard/mcps/[name]/.mcp.json` for each MCP. Auto-populates descriptions for common MCPs.
+Migrates existing `.mcp.json` and creates `.switchboard/mcps/[name]/.mcp.json` for each MCP. Auto-populates descriptions for common MCPs. **Automatically updates your `.mcp.json`** to use Switchboard.
 
-**3. Replace `.mcp.json`:**
+**3. Add MCPs (optional):**
 
-```json
-{
-  "mcpServers": {
-    "switchboard": {
-      "command": "switchboard",
-      "args": [],
-      "env": {}
-    }
-  }
-}
+```bash
+switchboard add filesystem                       # Uses npx filesystem
+switchboard add git-mcp node ./git-server.js     # Custom command
+switchboard add weather --claude                 # With Claude wrapper
+switchboard add memory --claude-server           # Full Claude Code instance with hooks
 ```
 
-4. Restart MCP host (Claude Code, Cursor, etc.)
+**4. Restart MCP host (Claude Code, Cursor, etc.)**
 
 ---
 
 ### Optional: Claude-Powered Intelligent Mode
 
-`switchboard init` now offers an optional Claude-powered reasoning layer. When enabled:
+`switchboard init` offers an optional Claude-powered reasoning layer. When enabled:
 
-- Each migrated MCP gains a `natural_language` subtool powered by a lightweight Claude Code agent.
-- The wrapper interprets free-form instructions and calls the real MCP with the correct subtool + args.
-- Original `.mcp.json` files are preserved in `.switchboard/mcps/<name>/original/.mcp.json` for reference.
+- Each MCP gains a `natural_language` subtool powered by a lightweight Claude Code agent
+- A `CLAUDE.md` file is generated with role-specific instructions for each MCP
+- The wrapper interprets free-form instructions and calls the real MCP with correct parameters
+- Original `.mcp.json` files are preserved in `original/` subdirectories
 
-At runtime, provide a Claude API key via `ANTHROPIC_API_KEY` (or `CLAUDE_API_KEY`). Optional tweaks:
+**Directory Structure with Claude Wrappers:**
+```
+.switchboard/mcps/memory/
+├── .mcp.json                    # Wrapper configuration
+├── CLAUDE.md                    # Instructions for Claude wrapper
+├── memory-claude-wrapper.mjs    # Wrapper script
+└── original/
+    └── .mcp.json               # Original MCP config
+```
+
+**Runtime Configuration:**
 
 | Variable | Purpose |
 | --- | --- |
-| `SWITCHBOARD_INTELLIGENT_MODEL` | Claude model ID (defaults to `claude-3-5-sonnet-20241022`). |
-| `SWITCHBOARD_INTELLIGENT_IDLE_MS` | Idle shutdown timeout in milliseconds (default 600000 / 10 minutes). |
-| `SWITCHBOARD_CHILD_TIMEOUT_MS` | RPC timeout passed to child MCPs (default 60000 ms). |
+| `ANTHROPIC_API_KEY` or `CLAUDE_API_KEY` | Required: Your Claude API key |
+| `SWITCHBOARD_INTELLIGENT_MODEL` | Claude model (default: `claude-3-5-sonnet-20241022`) |
+| `SWITCHBOARD_INTELLIGENT_IDLE_MS` | Idle timeout in ms (default: 600000 / 10 min) |
+| `SWITCHBOARD_CHILD_TIMEOUT_MS` | RPC timeout in ms (default: 60000 / 1 min) |
 
-From the host LLM, call the tool’s `natural_language` subtool and supply a `{ "query": "..." }` payload. The Claude wrapper handles schema mapping automatically.
+From the host LLM, call the `natural_language` subtool with `{ "query": "your request" }`.
+
+**Alternatively: Claude Code Server Mode** (EXPERIMENTAL)
+
+Instead of simple wrappers, spawn full Claude Code instances as child MCP servers:
+
+```bash
+switchboard add memory --claude-server
+```
+
+This creates a domain-specific Claude session with:
+- Hooks for SessionStart, PostToolUse, Stop, SessionEnd
+- Auto-updating `CLAUDE.md` based on usage patterns
+- Graceful idle shutdown with learning preservation
+- See [Claude Server Mode docs](./docs/claude-server-mode.md) for details
+
+---
+
+## CLI Commands
+
+### `switchboard init`
+
+Initialize Switchboard in your project. This command:
+- Creates `.switchboard/` directory structure with `mcps/` and `backups/` subdirectories
+- Migrates existing MCPs from `.mcp.json`
+- Auto-populates descriptions for 50+ common MCPs from `mcp-descriptions.json`
+- **Automatically updates your `.mcp.json`** to use Switchboard
+- Creates timestamped backup in `.switchboard/backups/`
+- Optionally enables Claude intelligent wrappers with CLAUDE.md instructions
+
+```bash
+switchboard init
+# Prompts for Claude wrapper option (y/N)
+```
+
+### `switchboard add`
+
+Add individual MCPs to an existing Switchboard setup.
+
+```bash
+# Basic usage (assumes npm package)
+switchboard add <name>
+
+# With custom command
+switchboard add <name> <command> [args...]
+
+# With options
+switchboard add <name> --description "Your description" --claude
+```
+
+Options:
+- `--description`, `-d`: Provide MCP description directly
+- `--claude`, `-c`: Create Claude intelligent wrapper
+
+Examples:
+```bash
+switchboard add filesystem                           # Uses: npx filesystem
+switchboard add git-mcp node ./git-server.js        # Custom command
+switchboard add weather --claude                     # With Claude wrapper
+switchboard add database -d "Database operations"    # With description
+```
+
+### `switchboard revert`
+
+Completely undo Switchboard initialization. This command:
+- Restores original `.mcp.json` from backup
+- Removes Claude wrapper scripts
+- Restores archived original MCP configs
+- Deletes `.switchboard/` directory
+- Allows clean re-initialization with different options
+
+```bash
+switchboard revert
+# Then you can run `switchboard init` again with different choices
+```
 
 ---
 
@@ -117,6 +198,7 @@ Host ──JSON-RPC(stdio)──> Switchboard
 ### In-Depth Guides
 
 - [Architecture](./docs/architecture.md) - System design and data flow
+- [Claude Server Mode](./docs/claude-server-mode.md) - Full Claude Code instances with hooks & learning (EXPERIMENTAL)
 - [Protocol Lessons](./docs/mcp-protocol-lessons.md) - Insights from building a proxy MCP
 - [Troubleshooting](./docs/troubleshooting-guide.md) - Solutions to common issues
 - [Best Practices](./docs/mcp-best-practices.md) - Guidelines for building robust MCPs
@@ -286,7 +368,10 @@ npm run test:e2e   # End-to-end tests
 ```
 src/
 ├── index.ts              # Main entrypoint
-├── cli/init.ts           # Init command implementation
+├── cli/
+│   ├── init.ts           # Init command implementation
+│   ├── add.ts            # Add command implementation
+│   └── revert.ts         # Revert command implementation
 ├── core/
 │   ├── config.ts         # Load/validate config
 │   ├── registry.ts       # Discover child MCPs

@@ -1,6 +1,6 @@
 import { Config } from './config.js';
 import { discover } from './registry.js';
-import { ChildClient } from './child.js';
+import { ChildClient, ClaudeChildClient } from './child.js';
 import { summarise } from './summarise.js';
 
 const childClients = new Map<string, ChildClient>();
@@ -116,7 +116,13 @@ export async function handleSuiteCall(toolName: string, params: any, config: Con
     // Get or create child client
     let client = childClients.get(childName);
     if (!client) {
-      client = new ChildClient(meta, config.timeouts.rpcMs);
+      // Use ClaudeChildClient for claude-server types
+      if (meta.type === 'claude-server') {
+        const idleTimeoutMs = Number(process.env.SWITCHBOARD_CHILD_IDLE_MS || 300000);
+        client = new ClaudeChildClient(meta, config.timeouts.rpcMs, idleTimeoutMs);
+      } else {
+        client = new ChildClient(meta, config.timeouts.rpcMs);
+      }
       childClients.set(childName, client);
     }
 
@@ -150,7 +156,13 @@ export async function handleSuiteCall(toolName: string, params: any, config: Con
     // Get or create child client
     let client = childClients.get(childName);
     if (!client) {
-      client = new ChildClient(meta, config.timeouts.rpcMs);
+      // Use ClaudeChildClient for claude-server types
+      if (meta.type === 'claude-server') {
+        const idleTimeoutMs = Number(process.env.SWITCHBOARD_CHILD_IDLE_MS || 300000);
+        client = new ClaudeChildClient(meta, config.timeouts.rpcMs, idleTimeoutMs);
+      } else {
+        client = new ChildClient(meta, config.timeouts.rpcMs);
+      }
       childClients.set(childName, client);
     }
 

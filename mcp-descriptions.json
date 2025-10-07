@@ -1,54 +1,196 @@
 {
-  "properties": {
-    "memory": "Use this tool to store and retrieve persistent memory across sessions.",
-    "context7": "Use this tool to search, index, and retrieve project documentation.",
-    "supabase": "Use this tool to interact with your Supabase database (query, insert, update).",
-
-    "1mcpserver": "Use this tool to auto-discover and configure other MCP servers on your machine.",
-    "21st.dev Magic": "Use this tool to generate polished UI components inspired by 21st.dev patterns.",
-    "4everland/4everland-hosting-mcp": "Use this tool to deploy sites and assets to decentralized storage (IPFS/Arweave) via 4EVERLAND.",
-    "Adfin": "Use this tool to manage invoicing, accounting, and payment reconciliation.",
-    "Agent Mindshare": "Use this tool to track brand/agent mentions and share-of-voice across AI platforms.",
-    "AgentQL": "Use this tool to extract structured data from web pages using AgentQL queries.",
-    "AgentRPC": "Use this tool to call remote functions and services via RPC from your agent.",
-    "Alby Bitcoin Payments MCP": "Use this tool to send and receive Bitcoin Lightning payments via Alby.",
-    "AllVoiceLab": "Use this tool to clone voices, synthesize speech, and translate audio.",
-    "Apify": "Use this tool to run Apify actors for web automation and data extraction.",
-    "APIMatic MCP": "Use this tool to validate and transform OpenAPI/SDK assets with APIMatic.",
-    "Bright Data": "Use this tool to crawl and collect public web data at scale.",
-    "Box": "Use this tool to search, read, and manage files and folders in Box.",
-    "Chart": "Use this tool to generate charts and visuals (AntV) from your data.",
-    "Chroma": "Use this tool to store embeddings and perform vector search with Chroma.",
-    "Cloudflare": "Use this tool to manage Cloudflare resources (DNS, KV, Pages, Workers).",
-    "CoinGecko": "Use this tool to fetch cryptocurrency prices and market data.",
-    "Convex": "Use this tool to query data and run functions in your Convex backend.",
-    "Couchbase": "Use this tool to query and manage data in Couchbase clusters.",
-    "Driflyte": "Use this tool to search topic-focused knowledge from recursively crawled sources.",
-    "ECharts": "Use this tool to render analytical charts using Apache ECharts.",
-    "ElevenLabs": "Use this tool to generate speech, voices, and audio effects with ElevenLabs.",
-    "GitHub": "Use this tool to interact with repositories: issues, PRs, code, and search.",
-    "Neon": "Use this tool to manage and query serverless Postgres on Neon.",
-    "Notion": "Use this tool to read, search, and update Notion pages and databases.",
-    "Stripe": "Use this tool to create charges, customers, and manage payments in Stripe.",
-    "Zapier": "Use this tool to connect to thousands of apps and run actions via Zapier.",
-
-    "Sequential Thinking": "Use this tool to structure or chain reasoning steps for complex problem solving.",
-    "wcgw": "Use this tool to run shell commands or code execution inside chat sessions.",
-    "Brave Search MCP": "Use this tool to perform web searches via Brave Search.",
-    "Web Research": "Use this tool to conduct web research with search + extraction workflows.",
-    "iTerm MCP": "Use this tool to execute shell commands in an iTerm terminal session.",
-    "TaskManager MCP": "Use this tool to manage, queue, and execute tasks within a session.",
-    "SQLite MCP Server": "Use this tool to query and manage SQLite databases.",
-    "Fetch": "Use this tool to fetch and return the contents of a web page or resource.",
-    "Knowledge Graph Memory Server": "Use this tool to store and query persistent knowledge graphs.",
-    "Playwright MCP": "Use this tool to automate browsers and interact with websites.",
-    "MySQL MCP Server": "Use this tool to query and manage MySQL databases.",
-    "Audiense Insights MCP": "Use this tool to fetch audience analytics and marketing insights via Audiense.",
-    "Exa Search": "Use this tool to perform semantic search across the real-time web.",
-    "Filesystem MCP": "Use this tool to read, write, and list files on the filesystem.",
-    "Git MCP": "Use this tool to interact with local Git repositories.",
-    "YAML MCP": "Use this tool to parse, validate, and update YAML files.",
-    "Terraform MCP Server": "Use this tool to explore and query Terraform modules and registries.",
-    "MongoDB MCP Server": "Use this tool to query and manage MongoDB collections and Atlas databases."
+  "mcps": {
+    "memory": {
+      "switchboard": "Use this tool to store and retrieve persistent memory across sessions.",
+      "claude": "Your role is to use this MCP server to store and retrieve persistent memory across sessions. When asked to remember something, store it appropriately. When asked to recall information, search through stored memories to find relevant content."
+    },
+    "context7": {
+      "switchboard": "Use this tool to search, index, and retrieve project documentation.",
+      "claude": "Your role is to use this MCP server to search, index, and retrieve project documentation. Help users find relevant documentation, understand code context, and navigate their project structure efficiently."
+    },
+    "supabase": {
+      "switchboard": "Use this tool to interact with your Supabase database (query, insert, update).",
+      "claude": "Your role is to use this MCP server to interact with the Supabase database. Execute queries, insert new records, update existing data, and manage database operations as requested. Ensure data integrity and follow best practices for database interactions."
+    },
+    "1mcpserver": {
+      "switchboard": "Use this tool to auto-discover and configure other MCP servers on your machine.",
+      "claude": "Your role is to use this MCP server to auto-discover and configure other MCP servers on your machine. Ensure you understand the user's intent and execute the appropriate MCP operations to fulfill their request."
+    },
+    "21stdev-magic": {
+      "switchboard": "Use this tool to generate polished UI components inspired by 21st.dev patterns.",
+      "claude": "Your role is to use this MCP server to generate polished UI components inspired by 21st.dev patterns. Ensure you understand the user's intent and execute the appropriate MCP operations to fulfill their request."
+    },
+    "4everland4everland-hosting-mcp": {
+      "switchboard": "Use this tool to deploy sites and assets to decentralized storage (IPFS/Arweave) via 4EVERLAND.",
+      "claude": "Your role is to use this MCP server to deploy sites and assets to decentralized storage (IPFS/Arweave) via 4EVERLAND. Ensure you understand the user's intent and execute the appropriate MCP operations to fulfill their request."
+    },
+    "adfin": {
+      "switchboard": "Use this tool to manage invoicing, accounting, and payment reconciliation.",
+      "claude": "Your role is to use this MCP server to manage invoicing, accounting, and payment reconciliation. Ensure you understand the user's intent and execute the appropriate MCP operations to fulfill their request."
+    },
+    "agent-mindshare": {
+      "switchboard": "Use this tool to track brand/agent mentions and share-of-voice across AI platforms.",
+      "claude": "Your role is to use this MCP server to track brand/agent mentions and share-of-voice across AI platforms. Ensure you understand the user's intent and execute the appropriate MCP operations to fulfill their request."
+    },
+    "agentql": {
+      "switchboard": "Use this tool to extract structured data from web pages using AgentQL queries.",
+      "claude": "Your role is to use this MCP server to extract structured data from web pages using AgentQL queries. Ensure you understand the user's intent and execute the appropriate MCP operations to fulfill their request."
+    },
+    "agentrpc": {
+      "switchboard": "Use this tool to call remote functions and services via RPC from your agent.",
+      "claude": "Your role is to use this MCP server to call remote functions and services via RPC from your agent. Ensure you understand the user's intent and execute the appropriate MCP operations to fulfill their request."
+    },
+    "alby-bitcoin-payments": {
+      "switchboard": "Use this tool to send and receive Bitcoin Lightning payments via Alby.",
+      "claude": "Your role is to use this MCP server to send and receive Bitcoin Lightning payments via Alby. Ensure you understand the user's intent and execute the appropriate MCP operations to fulfill their request."
+    },
+    "allvoicelab": {
+      "switchboard": "Use this tool to clone voices, synthesize speech, and translate audio.",
+      "claude": "Your role is to use this MCP server to clone voices, synthesize speech, and translate audio. Ensure you understand the user's intent and execute the appropriate MCP operations to fulfill their request."
+    },
+    "apify": {
+      "switchboard": "Use this tool to run Apify actors for web automation and data extraction.",
+      "claude": "Your role is to use this MCP server to run Apify actors for web automation and data extraction. Ensure you understand the user's intent and execute the appropriate MCP operations to fulfill their request."
+    },
+    "apimatic": {
+      "switchboard": "Use this tool to validate and transform OpenAPI/SDK assets with APIMatic.",
+      "claude": "Your role is to use this MCP server to validate and transform OpenAPI/SDK assets with APIMatic. Ensure you understand the user's intent and execute the appropriate MCP operations to fulfill their request."
+    },
+    "bright-data": {
+      "switchboard": "Use this tool to crawl and collect public web data at scale.",
+      "claude": "Your role is to use this MCP server to crawl and collect public web data at scale. Ensure you understand the user's intent and execute the appropriate MCP operations to fulfill their request."
+    },
+    "box": {
+      "switchboard": "Use this tool to search, read, and manage files and folders in Box.",
+      "claude": "Your role is to use this MCP server to search, read, and manage files and folders in Box. Ensure you understand the user's intent and execute the appropriate MCP operations to fulfill their request."
+    },
+    "chart": {
+      "switchboard": "Use this tool to generate charts and visuals (AntV) from your data.",
+      "claude": "Your role is to use this MCP server to generate charts and visuals (AntV) from your data. Ensure you understand the user's intent and execute the appropriate MCP operations to fulfill their request."
+    },
+    "chroma": {
+      "switchboard": "Use this tool to store embeddings and perform vector search with Chroma.",
+      "claude": "Your role is to use this MCP server to store embeddings and perform vector search with Chroma. Ensure you understand the user's intent and execute the appropriate MCP operations to fulfill their request."
+    },
+    "cloudflare": {
+      "switchboard": "Use this tool to manage Cloudflare resources (DNS, KV, Pages, Workers).",
+      "claude": "Your role is to use this MCP server to manage Cloudflare resources (DNS, KV, Pages, Workers). Ensure you understand the user's intent and execute the appropriate MCP operations to fulfill their request."
+    },
+    "coingecko": {
+      "switchboard": "Use this tool to fetch cryptocurrency prices and market data.",
+      "claude": "Your role is to use this MCP server to fetch cryptocurrency prices and market data. Ensure you understand the user's intent and execute the appropriate MCP operations to fulfill their request."
+    },
+    "convex": {
+      "switchboard": "Use this tool to query data and run functions in your Convex backend.",
+      "claude": "Your role is to use this MCP server to query data and run functions in your Convex backend. Ensure you understand the user's intent and execute the appropriate MCP operations to fulfill their request."
+    },
+    "couchbase": {
+      "switchboard": "Use this tool to query and manage data in Couchbase clusters.",
+      "claude": "Your role is to use this MCP server to query and manage data in Couchbase clusters. Ensure you understand the user's intent and execute the appropriate MCP operations to fulfill their request."
+    },
+    "driflyte": {
+      "switchboard": "Use this tool to search topic-focused knowledge from recursively crawled sources.",
+      "claude": "Your role is to use this MCP server to search topic-focused knowledge from recursively crawled sources. Ensure you understand the user's intent and execute the appropriate MCP operations to fulfill their request."
+    },
+    "echarts": {
+      "switchboard": "Use this tool to render analytical charts using Apache ECharts.",
+      "claude": "Your role is to use this MCP server to render analytical charts using Apache ECharts. Ensure you understand the user's intent and execute the appropriate MCP operations to fulfill their request."
+    },
+    "elevenlabs": {
+      "switchboard": "Use this tool to generate speech, voices, and audio effects with ElevenLabs.",
+      "claude": "Your role is to use this MCP server to generate speech, voices, and audio effects with ElevenLabs. Ensure you understand the user's intent and execute the appropriate MCP operations to fulfill their request."
+    },
+    "github": {
+      "switchboard": "Use this tool to interact with repositories: issues, PRs, code, and search.",
+      "claude": "Your role is to use this MCP server to interact with repositories: issues, PRs, code, and search. Ensure you understand the user's intent and execute the appropriate MCP operations to fulfill their request."
+    },
+    "neon": {
+      "switchboard": "Use this tool to manage and query serverless Postgres on Neon.",
+      "claude": "Your role is to use this MCP server to manage and query serverless Postgres on Neon. Ensure you understand the user's intent and execute the appropriate MCP operations to fulfill their request."
+    },
+    "notion": {
+      "switchboard": "Use this tool to read, search, and update Notion pages and databases.",
+      "claude": "Your role is to use this MCP server to read, search, and update Notion pages and databases. Ensure you understand the user's intent and execute the appropriate MCP operations to fulfill their request."
+    },
+    "stripe": {
+      "switchboard": "Use this tool to create charges, customers, and manage payments in Stripe.",
+      "claude": "Your role is to use this MCP server to create charges, customers, and manage payments in Stripe. Ensure you understand the user's intent and execute the appropriate MCP operations to fulfill their request."
+    },
+    "zapier": {
+      "switchboard": "Use this tool to connect to thousands of apps and run actions via Zapier.",
+      "claude": "Your role is to use this MCP server to connect to thousands of apps and run actions via Zapier. Ensure you understand the user's intent and execute the appropriate MCP operations to fulfill their request."
+    },
+    "sequential-thinking": {
+      "switchboard": "Use this tool to structure or chain reasoning steps for complex problem solving.",
+      "claude": "Your role is to use this MCP server to structure or chain reasoning steps for complex problem solving. Ensure you understand the user's intent and execute the appropriate MCP operations to fulfill their request."
+    },
+    "wcgw": {
+      "switchboard": "Use this tool to run shell commands or code execution inside chat sessions.",
+      "claude": "Your role is to use this MCP server to run shell commands or code execution inside chat sessions. Ensure you understand the user's intent and execute the appropriate MCP operations to fulfill their request."
+    },
+    "brave-search": {
+      "switchboard": "Use this tool to perform web searches via Brave Search.",
+      "claude": "Your role is to use this MCP server to perform web searches via Brave Search. Ensure you understand the user's intent and execute the appropriate MCP operations to fulfill their request."
+    },
+    "web-research": {
+      "switchboard": "Use this tool to conduct web research with search + extraction workflows.",
+      "claude": "Your role is to use this MCP server to conduct web research with search + extraction workflows. Ensure you understand the user's intent and execute the appropriate MCP operations to fulfill their request."
+    },
+    "iterm": {
+      "switchboard": "Use this tool to execute shell commands in an iTerm terminal session.",
+      "claude": "Your role is to use this MCP server to execute shell commands in an iTerm terminal session. Ensure you understand the user's intent and execute the appropriate MCP operations to fulfill their request."
+    },
+    "taskmanager": {
+      "switchboard": "Use this tool to manage, queue, and execute tasks within a session.",
+      "claude": "Your role is to use this MCP server to manage, queue, and execute tasks within a session. Ensure you understand the user's intent and execute the appropriate MCP operations to fulfill their request."
+    },
+    "sqlite": {
+      "switchboard": "Use this tool to query and manage SQLite databases.",
+      "claude": "Your role is to use this MCP server to query and manage SQLite databases. Ensure you understand the user's intent and execute the appropriate MCP operations to fulfill their request."
+    },
+    "fetch": {
+      "switchboard": "Use this tool to fetch and return the contents of a web page or resource.",
+      "claude": "Your role is to use this MCP server to fetch and return the contents of a web page or resource. Ensure you understand the user's intent and execute the appropriate MCP operations to fulfill their request."
+    },
+    "knowledge-graph-memory-server": {
+      "switchboard": "Use this tool to store and query persistent knowledge graphs.",
+      "claude": "Your role is to use this MCP server to store and query persistent knowledge graphs. Ensure you understand the user's intent and execute the appropriate MCP operations to fulfill their request."
+    },
+    "playwright": {
+      "switchboard": "Use this tool to automate browsers and interact with websites.",
+      "claude": "Your role is to use this MCP server to automate browsers and interact with websites. Ensure you understand the user's intent and execute the appropriate MCP operations to fulfill their request."
+    },
+    "mysql": {
+      "switchboard": "Use this tool to query and manage MySQL databases.",
+      "claude": "Your role is to use this MCP server to query and manage MySQL databases. Ensure you understand the user's intent and execute the appropriate MCP operations to fulfill their request."
+    },
+    "audiense-insights": {
+      "switchboard": "Use this tool to fetch audience analytics and marketing insights via Audiense.",
+      "claude": "Your role is to use this MCP server to fetch audience analytics and marketing insights via Audiense. Ensure you understand the user's intent and execute the appropriate MCP operations to fulfill their request."
+    },
+    "exa-search": {
+      "switchboard": "Use this tool to perform semantic search across the real-time web.",
+      "claude": "Your role is to use this MCP server to perform semantic search across the real-time web. Ensure you understand the user's intent and execute the appropriate MCP operations to fulfill their request."
+    },
+    "filesystem": {
+      "switchboard": "Use this tool to read, write, and list files on the filesystem.",
+      "claude": "Your role is to use this MCP server to read, write, and list files on the filesystem. Ensure you understand the user's intent and execute the appropriate MCP operations to fulfill their request."
+    },
+    "git": {
+      "switchboard": "Use this tool to interact with local Git repositories.",
+      "claude": "Your role is to use this MCP server to interact with local Git repositories. Ensure you understand the user's intent and execute the appropriate MCP operations to fulfill their request."
+    },
+    "yaml": {
+      "switchboard": "Use this tool to parse, validate, and update YAML files.",
+      "claude": "Your role is to use this MCP server to parse, validate, and update YAML files. Ensure you understand the user's intent and execute the appropriate MCP operations to fulfill their request."
+    },
+    "terraform": {
+      "switchboard": "Use this tool to explore and query Terraform modules and registries.",
+      "claude": "Your role is to use this MCP server to explore and query Terraform modules and registries. Ensure you understand the user's intent and execute the appropriate MCP operations to fulfill their request."
+    },
+    "mongodb": {
+      "switchboard": "Use this tool to query and manage MongoDB collections and Atlas databases.",
+      "claude": "Your role is to use this MCP server to query and manage MongoDB collections and Atlas databases. Ensure you understand the user's intent and execute the appropriate MCP operations to fulfill their request."
+    }
   }
 }
