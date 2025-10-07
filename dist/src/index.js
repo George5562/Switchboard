@@ -10,6 +10,37 @@ import { addMcpToSwitchboard } from './cli/add.js';
 async function main() {
     // Handle CLI commands
     const args = process.argv.slice(2);
+    if (args[0] === '--help' || args[0] === '-h') {
+        console.log(`
+Switchboard - MCP proxy and aggregator
+
+Usage:
+  switchboard                Start MCP server (stdio mode)
+  switchboard init           Initialize Claude Desktop MCP config
+  switchboard add <package>  Add an MCP to Claude Desktop config
+  switchboard revert         Restore original Claude Desktop config
+  switchboard --help         Show this help message
+
+Commands:
+  init                       Backs up and initializes Claude Desktop config
+                            for Switchboard MCP usage
+
+  add <package>              Adds an MCP package to your config
+    --command <cmd>          Custom command to run the MCP
+    --claude                 Also add to Claude Desktop config
+    --description <text>     Custom description for the MCP
+
+  revert                     Restores Claude Desktop config from backup
+                            and removes Switchboard entries
+
+Examples:
+  switchboard init
+  switchboard add @modelcontextprotocol/server-playwright
+  switchboard add my-mcp --command "node /path/to/mcp.js"
+  switchboard revert
+`);
+        process.exit(0);
+    }
     if (args[0] === 'init') {
         await initSwitchboard(process.cwd());
         process.exit(0);

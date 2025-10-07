@@ -14530,288 +14530,95 @@ function findMatchingDescription(mcpName, standardDescs) {
 }
 var CLAUDE_WRAPPER_TEMPLATE = String.raw`#!/usr/bin/env node
 
-import { readFile } from 'fs/promises';
 import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import Anthropic from '@anthropic-ai/sdk';
 
 const TOOL_NAME = __TOOL_NAME__;
-const MODEL = process.env.SWITCHBOARD_INTELLIGENT_MODEL || 'claude-3-5-sonnet-20241022';
 const IDLE_TIMEOUT_MS = Number(process.env.SWITCHBOARD_INTELLIGENT_IDLE_MS || 600000);
-const CHILD_TIMEOUT_MS = Number(process.env.SWITCHBOARD_CHILD_TIMEOUT_MS || 60000);
+const CONVERSATION_TIMEOUT_MS = Number(process.env.SWITCHBOARD_CONVERSATION_TIMEOUT_MS || 120000);
 
-class ChildClient {
-  constructor(meta, rpcTimeoutMs = 60000) {
-    this.meta = meta;
-    this.rpcTimeoutMs = rpcTimeoutMs;
-    this.process = undefined;
-    this.buffer = Buffer.alloc(0);
-    this.contentLength = -1;
-    this.seq = 0;
-    this.pending = new Map();
-    this.initialized = false;
-  }
+async function conversWithClaudeCode(query, context, cwd, mcpConfigPath) {
+  return new Promise((resolve, reject) => {
+    const args = [
+      '--print',
+      '--mcp-config', mcpConfigPath,
+      '--dangerously-skip-permissions',
+      '--output-format', 'text',
+    ];
 
-  async ensureStarted() {
-    if (this.process) return;
-    const cmd = (this.meta.command && this.meta.command.cmd) || 'node';
-    const args = (this.meta.command && this.meta.command.args) || ['dist/index.js'];
-    const env = { ...process.env, ...((this.meta.command && this.meta.command.env) || {}) };
-    this.process = spawn(cmd, args, {
-      cwd: this.meta.cwd,
-      stdio: ['pipe', 'pipe', 'inherit'],
-      env,
-    });
-
-    this.process.on('exit', (code) => {
-      const error = new Error('Child MCP ' + this.meta.name + ' exited with code ' + code);
-      for (const pending of this.pending.values()) {
-        pending.reject(error);
-        if (pending.timer) clearTimeout(pending.timer);
-      }
-      this.pending.clear();
-      this.process = undefined;
-      this.initialized = false;
-    });
-
-    if (this.process.stdout) {
-      this.process.stdout.setEncoding('utf8');
-      this.process.stdout.on('data', (chunk) => {
-        const chunkStr = typeof chunk === 'string' ? chunk : chunk.toString('utf8');
-        const chunkBuf = Buffer.from(chunkStr, 'utf8');
-        this.buffer = Buffer.concat([this.buffer, chunkBuf]);
-        this.processBuffer();
-      });
+    // Add system prompt from CLAUDE.md if context provided
+    if (context) {
+      args.push('--append-system-prompt', context);
     }
 
-    this.process.on('error', (err) => {
-      const error = new Error('Child MCP ' + this.meta.name + ' error: ' + err.message);
-      for (const pending of this.pending.values()) {
-        pending.reject(error);
-        if (pending.timer) clearTimeout(pending.timer);
-      }
-      this.pending.clear();
+    args.push(query);
+
+    const claudeProcess = spawn('claude', args, {
+      cwd,
+      stdio: ['ignore', 'pipe', 'inherit'],
+      env: { ...process.env },
     });
 
-    await this.initialize();
-  }
+    let buffer = '';
+    let resolved = false;
 
-  processBuffer() {
-    while (true) {
-      const preview = this.buffer.toString('utf8', 0, Math.min(20, this.buffer.length));
-      const hasContentLength = /Content-Length:/i.test(preview);
-      if (hasContentLength) {
-        if (this.contentLength < 0) {
-          const sep = this.buffer.indexOf('\r\n\r\n');
-          if (sep < 0) break;
-          const header = this.buffer.subarray(0, sep).toString('utf8');
-          const match = /Content-Length:\s*(\d+)/i.exec(header);
-          if (!match) {
-            process.stderr.write('Missing Content-Length value\n');
-            break;
-          }
-          this.contentLength = parseInt(match[1], 10);
-          this.buffer = this.buffer.subarray(sep + 4);
-        }
-        if (this.buffer.length < this.contentLength) break;
-        const body = this.buffer.subarray(0, this.contentLength);
-        this.buffer = this.buffer.subarray(this.contentLength);
-        this.contentLength = -1;
-        try {
-          const message = JSON.parse(body.toString('utf8'));
-          this.handleMessage(message);
-        } catch (error) {
-          process.stderr.write('Failed to parse Content-Length message: ' + error + '\n');
-        }
-        continue;
+    const timeout = setTimeout(() => {
+      if (!resolved) {
+        resolved = true;
+        claudeProcess.kill();
+        reject(new Error('Claude Code conversation timeout after ' + CONVERSATION_TIMEOUT_MS + 'ms'));
       }
+    }, CONVERSATION_TIMEOUT_MS);
 
-      const newlineIdx = this.buffer.indexOf('\n');
-      if (newlineIdx < 0) break;
-      const line = this.buffer.subarray(0, newlineIdx).toString('utf8').trim();
-      this.buffer = this.buffer.subarray(newlineIdx + 1);
-      if (line && line.startsWith('{')) {
-        try {
-          const message = JSON.parse(line);
-          this.handleMessage(message);
-        } catch (error) {
-          // Ignore non-JSON output
+    claudeProcess.stdout.on('data', (chunk) => {
+      buffer += chunk.toString();
+    });
+
+    claudeProcess.on('error', (err) => {
+      if (!resolved) {
+        resolved = true;
+        clearTimeout(timeout);
+        reject(new Error('Failed to spawn claude headless: ' + err.message));
+      }
+    });
+
+    claudeProcess.on('exit', (code) => {
+      if (!resolved) {
+        resolved = true;
+        clearTimeout(timeout);
+        if (code === 0) {
+          resolve({ content: [{ type: 'text', text: buffer.trim() }] });
+        } else {
+          reject(new Error('Claude Code exited with code ' + code + '. Output: ' + buffer));
         }
       }
-    }
-  }
-
-  handleMessage(message) {
-    if (!message || typeof message.id === 'undefined') return;
-    const pending = this.pending.get(message.id);
-    if (!pending) return;
-    this.pending.delete(message.id);
-    if (pending.timer) clearTimeout(pending.timer);
-    if (message.error) {
-      pending.reject(new Error(message.error.message || 'Unknown error'));
-    } else {
-      pending.resolve(message.result);
-    }
-  }
-
-  async send(method, params) {
-    await this.ensureStarted();
-    const id = ++this.seq;
-    const message = { jsonrpc: '2.0', id, method, params };
-    const json = JSON.stringify(message);
-    return await new Promise((resolve, reject) => {
-      const timer = setTimeout(() => {
-        this.pending.delete(id);
-        reject(new Error('RPC timeout for ' + method));
-      }, this.rpcTimeoutMs);
-      this.pending.set(id, { resolve, reject, timer });
-      this.process.stdin.write(json + '\n');
     });
-  }
-
-  async initialize() {
-    if (this.initialized) return;
-    await this.send('initialize', {
-      protocolVersion: '2024-11-05',
-      capabilities: {},
-      clientInfo: { name: 'switchboard-intelligent-wrapper', version: '0.1.0' },
-    });
-    this.initialized = true;
-  }
-
-  async listTools() {
-    const result = await this.send('tools/list');
-    return (result && result.tools) || [];
-  }
-
-  async callTool(name, args) {
-    return await this.send('tools/call', { name, arguments: args || {} });
-  }
-
-  close() {
-    if (this.process) {
-      this.process.kill();
-      this.process = undefined;
-    }
-    for (const pending of this.pending.values()) {
-      if (pending.timer) clearTimeout(pending.timer);
-    }
-    this.pending.clear();
-    this.initialized = false;
-  }
-}
-
-function summariseSubtool(tool) {
-  const schema = tool.inputSchema ? JSON.stringify(tool.inputSchema) : 'No schema provided';
-  const snippet = schema.length > 300 ? schema.slice(0, 300) + '...' : schema;
-  const description = tool.description || 'No description provided';
-  return '- ' + tool.name + ': ' + description + '\n  Schema: ' + snippet;
-}
-
-function extractJsonCandidate(text) {
-  const match = text.match(/\{[\s\S]*\}/);
-  return match ? match[0] : text;
-}
-
-async function interpretWithClaude(query, context, subtools) {
-  const apiKey = process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_API_KEY;
-  if (!apiKey) {
-    throw new Error('Missing Claude API key. Set ANTHROPIC_API_KEY or CLAUDE_API_KEY before using intelligent mode.');
-  }
-
-  let anthropic;
-  try {
-    anthropic = new Anthropic({ apiKey });
-  } catch (error) {
-    throw new Error('Failed to initialise Anthropic client: ' + error.message);
-  }
-
-  const formattedTools = subtools.map(summariseSubtool).join('\n\n');
-  const contextBlock = context ? '\n\nAdditional context from the user:\n' + context : '';
-  const systemPrompt =
-    process.env.SWITCHBOARD_INTELLIGENT_SYSTEM_PROMPT ||
-    'You are a Claude Code specialist that converts natural language instructions into precise MCP tool invocations.';
-
-  const response = await anthropic.messages.create({
-    model: MODEL,
-    max_tokens: 1024,
-    temperature: 0,
-    system: systemPrompt,
-    messages: [
-      {
-        role: 'user',
-        content: [
-          {
-            type: 'text',
-            text:
-              'Available subtools for ' +
-              TOOL_NAME +
-              ':\n' +
-              formattedTools +
-              '\n\n' +
-              'Instruction:\n' +
-              query +
-              contextBlock +
-              '\n\nRespond with JSON using the format {"subtool": string, "args": object}.',
-          },
-        ],
-      },
-    ],
   });
-
-  const textContent = (response.content || [])
-    .filter((item) => item.type === 'text')
-    .map((item) => item.text)
-    .join('')
-    .trim();
-
-  if (!textContent) {
-    throw new Error('Claude did not return any text content to parse.');
-  }
-
-  const jsonCandidate = extractJsonCandidate(textContent);
-  let parsed;
-  try {
-    parsed = JSON.parse(jsonCandidate);
-  } catch (error) {
-    throw new Error('Claude response was not valid JSON: ' + error.message + '\nResponse: ' + textContent);
-  }
-
-  if (!parsed || typeof parsed.subtool !== 'string') {
-    throw new Error('Claude response must include a string "subtool" field.');
-  }
-
-  if (parsed.args !== undefined && typeof parsed.args !== 'object') {
-    throw new Error('Claude response must include an object in "args" when provided.');
-  }
-
-  return { subtool: parsed.subtool, args: parsed.args || {} };
 }
 
 async function main() {
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = dirname(__filename);
-  const originalPath = join(__dirname, 'original', '.mcp.json');
-  const rawConfig = await readFile(originalPath, 'utf8');
-  const originalConfig = JSON.parse(rawConfig);
-  const childMeta = {
-    name: originalConfig.name || TOOL_NAME,
-    description: originalConfig.description,
-    cwd: join(__dirname, 'original'),
-    command: originalConfig.command,
-  };
+  const mcpConfigPath = join(__dirname, '.mcp.json');
 
-  const client = new ChildClient(childMeta, CHILD_TIMEOUT_MS);
+  // Load CLAUDE.md for system prompt
+  let claudeInstructions = '';
+  try {
+    const { readFile } = await import('fs/promises');
+    claudeInstructions = await readFile(join(__dirname, 'CLAUDE.md'), 'utf8');
+  } catch {
+    claudeInstructions = 'You are a specialist for ' + TOOL_NAME + '. Use the available MCP tools to fulfill user requests.';
+  }
+
   let lastActivity = Date.now();
   const idleTimer =
     IDLE_TIMEOUT_MS > 0
       ? setInterval(() => {
           if (Date.now() - lastActivity > IDLE_TIMEOUT_MS) {
             console.error('🛑 Intelligent wrapper idle timeout reached. Shutting down ' + TOOL_NAME + '.');
-            client.close();
             process.exit(0);
           }
         }, Math.max(1000, Math.floor(IDLE_TIMEOUT_MS / 2)))
@@ -14824,45 +14631,40 @@ async function main() {
   });
 
   server.tool(
-    'natural_language',
-    'Intelligent natural language interface for ' + TOOL_NAME,
+    'converse',
+    'Natural language interface for ' + TOOL_NAME + ' - powered by specialist Claude Code agent',
     {
       type: 'object',
       properties: {
         query: {
           type: 'string',
           description:
-            'Describe what you want the tool to achieve. Claude will translate this into a concrete MCP call.',
+            'Describe what you want the tool to achieve in natural language. A specialist Claude will use the ' + TOOL_NAME + ' MCP to fulfill your request.',
         },
         context: {
           type: 'string',
-          description: 'Optional extra context, constraints, or background information for Claude.',
+          description: 'Optional extra context, constraints, or background information.',
         },
       },
       required: ['query'],
     },
     async (args) => {
       lastActivity = Date.now();
-      const tools = await client.listTools();
-      const plan = await interpretWithClaude(args.query, args.context, tools);
-      const match = tools.find((tool) => tool.name === plan.subtool);
-      if (!match) {
-        throw new Error('Claude selected unknown subtool "' + plan.subtool + '" for ' + TOOL_NAME);
-      }
       try {
-        return await client.callTool(plan.subtool, plan.args);
+        const systemPrompt = claudeInstructions + (args.context ? '\n\nAdditional context: ' + args.context : '');
+        const result = await conversWithClaudeCode(args.query, systemPrompt, __dirname, mcpConfigPath);
+        return result;
       } catch (error) {
-        throw new Error('Failed to call subtool "' + plan.subtool + '": ' + error.message);
+        throw new Error('Claude specialist failed: ' + error.message);
       }
     }
   );
 
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error('Claude intelligent wrapper for ' + TOOL_NAME + ' ready.');
+  console.error('Claude Code specialist wrapper for ' + TOOL_NAME + ' ready.');
 
   const cleanup = () => {
-    client.close();
     if (idleTimer) clearInterval(idleTimer);
   };
 
@@ -15480,7 +15282,8 @@ async function addMcpToSwitchboard(cwd, args) {
       join4(originalDir, ".mcp.json"),
       JSON.stringify(config, null, 2)
     );
-    const wrapperScriptName = `${mcpName}-claude-wrapper.mjs`;
+    const sanitizedName = mcpName.replace(/[/@]/g, "-");
+    const wrapperScriptName = `${sanitizedName}-claude-wrapper.mjs`;
     const wrapperScriptPath = join4(mcpDir, wrapperScriptName);
     const wrapperContent = `#!/usr/bin/env node
 // Claude intelligent wrapper for ${mcpName}
@@ -15522,6 +15325,37 @@ process.exit(1);
 // src/index.ts
 async function main() {
   const args = process.argv.slice(2);
+  if (args[0] === "--help" || args[0] === "-h") {
+    console.log(`
+Switchboard - MCP proxy and aggregator
+
+Usage:
+  switchboard                Start MCP server (stdio mode)
+  switchboard init           Initialize Claude Desktop MCP config
+  switchboard add <package>  Add an MCP to Claude Desktop config
+  switchboard revert         Restore original Claude Desktop config
+  switchboard --help         Show this help message
+
+Commands:
+  init                       Backs up and initializes Claude Desktop config
+                            for Switchboard MCP usage
+
+  add <package>              Adds an MCP package to your config
+    --command <cmd>          Custom command to run the MCP
+    --claude                 Also add to Claude Desktop config
+    --description <text>     Custom description for the MCP
+
+  revert                     Restores Claude Desktop config from backup
+                            and removes Switchboard entries
+
+Examples:
+  switchboard init
+  switchboard add @modelcontextprotocol/server-playwright
+  switchboard add my-mcp --command "node /path/to/mcp.js"
+  switchboard revert
+`);
+    process.exit(0);
+  }
   if (args[0] === "init") {
     await initSwitchboard(process.cwd());
     process.exit(0);

@@ -47,57 +47,99 @@ Migrates existing `.mcp.json` and creates `.switchboard/mcps/[name]/.mcp.json` f
 ```bash
 switchboard add filesystem                       # Uses npx filesystem
 switchboard add git-mcp node ./git-server.js     # Custom command
-switchboard add weather --claude                 # With Claude wrapper
-switchboard add memory --claude-server           # Full Claude Code instance with hooks
 ```
 
 **4. Restart MCP host (Claude Code, Cursor, etc.)**
 
 ---
 
-### Optional: Claude-Powered Intelligent Mode
+## Two Operating Modes
 
-`switchboard init` offers an optional Claude-powered reasoning layer. When enabled:
+Switchboard offers two distinct architectures. **Choose one during `init`:**
 
-- Each MCP gains a `natural_language` subtool powered by a lightweight Claude Code agent
-- A `CLAUDE.md` file is generated with role-specific instructions for each MCP
-- The wrapper interprets free-form instructions and calls the real MCP with correct parameters
-- Original `.mcp.json` files are preserved in `original/` subdirectories
+### 🔧 Standard Mode (Default)
 
-**Directory Structure with Claude Wrappers:**
+**What it is:** Token-efficient MCP aggregation with structured tool calls.
+
+**How it works:**
+- One suite tool per MCP presented to host
+- Host calls `introspect` action to see available subtools
+- Host calls `call` action with specific subtool name and args
+- Direct MCP communication, no intermediary
+
+**Best for:** Maximum compatibility, predictable behavior, no dependencies.
+
+**Usage:**
+```bash
+switchboard init
+# Choose "N" when prompted for Claude mode
+```
+
+**Example flow:**
+```
+Host → memory_suite.introspect → [create_entities, search_nodes, ...]
+Host → memory_suite.call(subtool: "create_entities", args: {...})
+```
+
+---
+
+### 🤖 Claude Mode (Experimental)
+
+**What it is:** Natural language interface powered by specialist Claude Code agents.
+
+**How it works:**
+```
+Master Claude Code (your session)
+    ↓ "store a note saying hello"
+Switchboard Wrapper
+    ↓ spawns: claude --print --mcp-config .mcp.json
+Specialist Claude Code (headless)
+    ↓ uses structured MCP tools
+Real MCP (memory, filesystem, etc.)
+```
+
+Each MCP gets a dedicated specialist Claude that:
+- Interprets natural language queries
+- Calls the appropriate MCP tools
+- Returns results in plain English
+
+**Best for:** Natural language interfaces, complex multi-step operations, user-friendly interactions.
+
+**Requirements:**
+- Claude Code installed (`claude` command in PATH)
+- Claude Code subscription (no API key needed!)
+
+**Usage:**
+```bash
+switchboard init
+# Choose "y" when prompted for Claude mode
+```
+
+**Example flow:**
+```
+Master Claude → memory_converse(query: "store a note saying hello")
+    → Specialist Claude interprets and calls memory.create_entities(...)
+    → Returns: "Stored note successfully"
+```
+
+**Directory Structure (Claude Mode):**
 ```
 .switchboard/mcps/memory/
-├── .mcp.json                    # Wrapper configuration
-├── CLAUDE.md                    # Instructions for Claude wrapper
-├── memory-claude-wrapper.mjs    # Wrapper script
+├── .mcp.json                    # Claude Code format config
+├── CLAUDE.md                    # Instructions for specialist
+├── memory-claude-wrapper.mjs    # Wrapper spawns Claude
 └── original/
-    └── .mcp.json               # Original MCP config
+    └── .mcp.json               # Backup of original config
 ```
 
-**Runtime Configuration:**
+**Configuration:**
 
-| Variable | Purpose |
-| --- | --- |
-| `ANTHROPIC_API_KEY` or `CLAUDE_API_KEY` | Required: Your Claude API key |
-| `SWITCHBOARD_INTELLIGENT_MODEL` | Claude model (default: `claude-3-5-sonnet-20241022`) |
-| `SWITCHBOARD_INTELLIGENT_IDLE_MS` | Idle timeout in ms (default: 600000 / 10 min) |
-| `SWITCHBOARD_CHILD_TIMEOUT_MS` | RPC timeout in ms (default: 60000 / 1 min) |
+| Variable | Purpose | Default |
+| --- | --- | --- |
+| `SWITCHBOARD_INTELLIGENT_IDLE_MS` | Wrapper idle timeout | 600000 (10 min) |
+| `SWITCHBOARD_CONVERSATION_TIMEOUT_MS` | Per-query timeout | 120000 (2 min) |
 
-From the host LLM, call the `natural_language` subtool with `{ "query": "your request" }`.
-
-**Alternatively: Claude Code Server Mode** (EXPERIMENTAL)
-
-Instead of simple wrappers, spawn full Claude Code instances as child MCP servers:
-
-```bash
-switchboard add memory --claude-server
-```
-
-This creates a domain-specific Claude session with:
-- Hooks for SessionStart, PostToolUse, Stop, SessionEnd
-- Auto-updating `CLAUDE.md` based on usage patterns
-- Graceful idle shutdown with learning preservation
-- See [Claude Server Mode docs](./docs/claude-server-mode.md) for details
+**⚠️ Important:** Once you choose a mode during `init`, **all MCPs use that mode**. To switch modes, run `switchboard revert` then `switchboard init` again with a different choice.
 
 ---
 
@@ -120,7 +162,7 @@ switchboard init
 
 ### `switchboard add`
 
-Add individual MCPs to an existing Switchboard setup.
+Add individual MCPs to an existing Switchboard setup. **Uses the same mode as `init`** (Standard or Claude).
 
 ```bash
 # Basic usage (assumes npm package)
@@ -129,21 +171,21 @@ switchboard add <name>
 # With custom command
 switchboard add <name> <command> [args...]
 
-# With options
-switchboard add <name> --description "Your description" --claude
+# With description
+switchboard add <name> --description "Your description"
 ```
 
 Options:
 - `--description`, `-d`: Provide MCP description directly
-- `--claude`, `-c`: Create Claude intelligent wrapper
 
 Examples:
 ```bash
 switchboard add filesystem                           # Uses: npx filesystem
 switchboard add git-mcp node ./git-server.js        # Custom command
-switchboard add weather --claude                     # With Claude wrapper
 switchboard add database -d "Database operations"    # With description
 ```
+
+**Note:** The MCP will be configured in the same mode (Standard/Claude) that was chosen during `switchboard init`.
 
 ### `switchboard revert`
 

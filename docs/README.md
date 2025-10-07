@@ -149,10 +149,11 @@ Each issue includes:
 
 ### I'm setting up Switchboard
 
-1. Run `switchboard init` to migrate existing MCPs
-2. Optionally enable Claude wrappers for natural language interface
-3. Use `switchboard add <mcp>` to add more MCPs incrementally
-4. Use `switchboard revert` to undo and try different options
+1. Run `switchboard init` and choose your mode:
+   - **Standard Mode** (default): Structured tool calls, maximum compatibility
+   - **Claude Mode** (experimental): Natural language interface via specialist Claude agents
+2. Use `switchboard add <mcp>` to add more MCPs (uses same mode as init)
+3. Use `switchboard revert` to undo and try a different mode
 
 ### I'm building a new MCP
 
@@ -293,8 +294,10 @@ Same as Switchboard: MIT
 
 **Last Updated:** 2025-10-07
 - Added CLI commands: `init`, `add`, `revert`
-- Added Claude intelligent wrapper support with CLAUDE.md generation
-- Backup files now stored in `.switchboard/backups/`
-- Restructured `mcp-descriptions.json` with switchboard and claude descriptions
+- Two distinct operating modes: Standard (structured) and Claude (natural language)
+- Claude Mode uses headless `claude --print` (no API key needed)
+- Specialist Claude agents for each MCP with CLAUDE.md instructions
+- Backup files stored in `.switchboard/backups/`
+- Mode choice applies to entire setup (not per-MCP)
 
 **Version:** 0.1.0 (matches Switchboard release)

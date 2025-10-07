@@ -278,8 +278,9 @@ export async function addMcpToSwitchboard(cwd, args) {
         const originalDir = join(mcpDir, 'original');
         await mkdirAsync(originalDir, { recursive: true });
         await writeFileAsync(join(originalDir, '.mcp.json'), JSON.stringify(config, null, 2));
-        // Create wrapper script
-        const wrapperScriptName = `${mcpName}-claude-wrapper.mjs`;
+        // Create wrapper script (sanitize name for filename safety)
+        const sanitizedName = mcpName.replace(/[/@]/g, '-');
+        const wrapperScriptName = `${sanitizedName}-claude-wrapper.mjs`;
         const wrapperScriptPath = join(mcpDir, wrapperScriptName);
         // Note: In production, we'd import the full wrapper template
         // For now, we'll create a placeholder
