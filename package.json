@@ -55,6 +55,7 @@
     "release": "semantic-release"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.37.0",
     "ajv": "^8.17.1",
     "globby": "^14.1.0",
     "read-pkg-up": "^11.0.0",

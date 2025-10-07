@@ -60,6 +60,26 @@ Migrates existing `.mcp.json` and creates `.switchboard/mcps/[name]/.mcp.json` f
 
 ---
 
+### Optional: Claude-Powered Intelligent Mode
+
+`switchboard init` now offers an optional Claude-powered reasoning layer. When enabled:
+
+- Each migrated MCP gains a `natural_language` subtool powered by a lightweight Claude Code agent.
+- The wrapper interprets free-form instructions and calls the real MCP with the correct subtool + args.
+- Original `.mcp.json` files are preserved in `.switchboard/mcps/<name>/original/.mcp.json` for reference.
+
+At runtime, provide a Claude API key via `ANTHROPIC_API_KEY` (or `CLAUDE_API_KEY`). Optional tweaks:
+
+| Variable | Purpose |
+| --- | --- |
+| `SWITCHBOARD_INTELLIGENT_MODEL` | Claude model ID (defaults to `claude-3-5-sonnet-20241022`). |
+| `SWITCHBOARD_INTELLIGENT_IDLE_MS` | Idle shutdown timeout in milliseconds (default 600000 / 10 minutes). |
+| `SWITCHBOARD_CHILD_TIMEOUT_MS` | RPC timeout passed to child MCPs (default 60000 ms). |
+
+From the host LLM, call the tool’s `natural_language` subtool and supply a `{ "query": "..." }` payload. The Claude wrapper handles schema mapping automatically.
+
+---
+
 ## How It Works
 
 ```
