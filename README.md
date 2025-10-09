@@ -83,17 +83,17 @@ Host → memory_suite.call(subtool: "create_entities", args: {...})
 
 ---
 
-### 🤖 Claude Mode (Experimental)
+### 🤖 Claude Mode (v0.2.1+)
 
-**What it is:** Natural language interface powered by specialist Claude Code agents.
+**What it is:** Natural language interface powered by specialist Claude Code agents with **multi-turn conversation support**.
 
 **How it works:**
 ```
 Master Claude Code (your session)
     ↓ "store a note saying hello"
-Switchboard Wrapper
-    ↓ spawns: claude --print --mcp-config .mcp.json
-Specialist Claude Code (headless)
+Switchboard Wrapper (persists)
+    ↓ spawns/resumes: claude --print --mcp-config .mcp.json
+Specialist Claude Code (session-aware)
     ↓ uses structured MCP tools
 Real MCP (memory, filesystem, etc.)
 ```
@@ -101,7 +101,16 @@ Real MCP (memory, filesystem, etc.)
 Each MCP gets a dedicated specialist Claude that:
 - Interprets natural language queries
 - Calls the appropriate MCP tools
+- **Remembers context across multiple calls** (v0.2.1+)
 - Returns results in plain English
+
+**Key Features (v0.2.1+):**
+- ✅ Multi-turn conversations (specialists remember context across calls)
+- ✅ Session persistence with automatic resume
+- ✅ Dramatically fewer input tokens on resumed calls
+- ✅ Increased cache reuse on subsequent turns
+- ✅ Automatic session cleanup (5-minute idle timeout)
+- ✅ Graceful shutdown handling with SIGTERM
 
 **Best for:** Natural language interfaces, complex multi-step operations, user-friendly interactions.
 
@@ -113,33 +122,30 @@ Each MCP gets a dedicated specialist Claude that:
 ```bash
 switchboard init
 # Choose "y" when prompted for Claude mode
+
+# Install MCP SDK in each wrapper
+cd .switchboard/mcps/memory && npm install @modelcontextprotocol/sdk
 ```
 
-**Example flow:**
+**Example flow (with context memory):**
 ```
 Master Claude → memory_converse(query: "store a note saying hello")
-    → Specialist Claude interprets and calls memory.create_entities(...)
-    → Returns: "Stored note successfully"
-```
-
-**Directory Structure (Claude Mode):**
-```
-.switchboard/mcps/memory/
-├── .mcp.json                    # Claude Code format config
-├── CLAUDE.md                    # Instructions for specialist
-├── memory-claude-wrapper.mjs    # Wrapper spawns Claude
-└── original/
-    └── .mcp.json               # Backup of original config
+    → Specialist creates note, session starts
+Master Claude → memory_converse(query: "what note did I just store?")
+    → Specialist remembers: "The note saying 'hello'"
 ```
 
 **Configuration:**
 
 | Variable | Purpose | Default |
 | --- | --- | --- |
+| `SWITCHBOARD_SESSION_IDLE_MS` | Session idle timeout | 300000 (5 min) |
 | `SWITCHBOARD_INTELLIGENT_IDLE_MS` | Wrapper idle timeout | 600000 (10 min) |
 | `SWITCHBOARD_CONVERSATION_TIMEOUT_MS` | Per-query timeout | 120000 (2 min) |
 
 **⚠️ Important:** Once you choose a mode during `init`, **all MCPs use that mode**. To switch modes, run `switchboard revert` then `switchboard init` again with a different choice.
+
+**📚 Full Guide:** See [docs/claude-mode-guide.md](./docs/claude-mode-guide.md) for complete documentation on session management, CLAUDE.md customization, and troubleshooting.
 
 ---
 
@@ -240,7 +246,9 @@ Host ──JSON-RPC(stdio)──> Switchboard
 ### In-Depth Guides
 
 - [Architecture](./docs/architecture.md) - System design and data flow
-- [Claude Server Mode](./docs/claude-server-mode.md) - Full Claude Code instances with hooks & learning (EXPERIMENTAL)
+- [Claude Mode Complete Guide](./docs/claude-mode-guide.md) - Session management, CLAUDE.md customization, troubleshooting
+- [Session Examples](./docs/session-examples.md) - Multi-turn conversation examples with performance benchmarks
+- [Claude Headless Mode](./docs/claude-headless.md) - Using Claude Code programmatically
 - [Protocol Lessons](./docs/mcp-protocol-lessons.md) - Insights from building a proxy MCP
 - [Troubleshooting](./docs/troubleshooting-guide.md) - Solutions to common issues
 - [Best Practices](./docs/mcp-best-practices.md) - Guidelines for building robust MCPs
@@ -393,6 +401,7 @@ npm run test:e2e   # End-to-end tests
 
 ### Performance Benchmarks
 
+**Standard Mode:**
 - **Startup**: ~1000ms (includes child discovery)
 - **Tool Listing**: ~immediate (cached)
 - **Child Operations**: ~2000ms (spawn + RPC)
@@ -400,6 +409,16 @@ npm run test:e2e   # End-to-end tests
   - Memory MCP: 89% (5,913 → 634 tokens)
   - Typical aggregate: 85-90% (1,820+ → 200-300 tokens)
   - Large MCPs like Supabase: 95%+ (20,000+ → ~1,000 tokens)
+
+**Claude Mode Session Performance (v0.2.1+):**
+- **Cold Start (Turn 1)**: 20.4s with 21k cache creation tokens
+- **Warm Resume (Turn 2)**: Variable (task-dependent), with 267k cache read tokens
+- **Continued (Turn 3+)**: Similar to Turn 2, with 88k+ cache read tokens
+- **Token Counts Across 3 Turns**:
+  - Input tokens: 18 → 62 → 5
+  - Cache creation: 21k → 16k → 2.6k
+  - Cache reads: 41k → 267k → 88k
+- **Session Overhead**: ~0ms (wrapper process persists, session state maintained in memory)
 
 ---
 

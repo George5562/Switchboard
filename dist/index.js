@@ -10288,12 +10288,7 @@ var NEVER = INVALID;
 
 // node_modules/@modelcontextprotocol/sdk/dist/esm/types.js
 var LATEST_PROTOCOL_VERSION = "2025-06-18";
-var SUPPORTED_PROTOCOL_VERSIONS = [
-  LATEST_PROTOCOL_VERSION,
-  "2025-03-26",
-  "2024-11-05",
-  "2024-10-07"
-];
+var SUPPORTED_PROTOCOL_VERSIONS = [LATEST_PROTOCOL_VERSION, "2025-03-26", "2024-11-05", "2024-10-07"];
 var JSONRPC_VERSION = "2.0";
 var ProgressTokenSchema = external_exports.union([external_exports.string(), external_exports.number().int()]);
 var CursorSchema = external_exports.string();
@@ -10373,12 +10368,7 @@ var JSONRPCErrorSchema = external_exports.object({
   })
 }).strict();
 var isJSONRPCError = (value) => JSONRPCErrorSchema.safeParse(value).success;
-var JSONRPCMessageSchema = external_exports.union([
-  JSONRPCRequestSchema,
-  JSONRPCNotificationSchema,
-  JSONRPCResponseSchema,
-  JSONRPCErrorSchema
-]);
+var JSONRPCMessageSchema = external_exports.union([JSONRPCRequestSchema, JSONRPCNotificationSchema, JSONRPCResponseSchema, JSONRPCErrorSchema]);
 var EmptyResultSchema = ResultSchema.strict();
 var CancelledNotificationSchema = NotificationSchema.extend({
   method: external_exports.literal("notifications/cancelled"),
@@ -10405,21 +10395,38 @@ var IconSchema = external_exports.object({
    */
   mimeType: external_exports.optional(external_exports.string()),
   /**
-   * Optional string specifying icon dimensions (e.g., "48x48 96x96").
+   * Optional array of strings that specify sizes at which the icon can be used.
+   * Each string should be in WxH format (e.g., `"48x48"`, `"96x96"`) or `"any"` for scalable formats like SVG.
+   *
+   * If not provided, the client should assume that the icon can be used at any size.
    */
-  sizes: external_exports.optional(external_exports.string())
+  sizes: external_exports.optional(external_exports.array(external_exports.string()))
+}).passthrough();
+var IconsSchema = external_exports.object({
+  /**
+   * Optional set of sized icons that the client can display in a user interface.
+   *
+   * Clients that support rendering icons MUST support at least the following MIME types:
+   * - `image/png` - PNG images (safe, universal compatibility)
+   * - `image/jpeg` (and `image/jpg`) - JPEG images (safe, universal compatibility)
+   *
+   * Clients that support rendering icons SHOULD also support:
+   * - `image/svg+xml` - SVG images (scalable but requires security precautions)
+   * - `image/webp` - WebP images (modern, efficient format)
+   */
+  icons: external_exports.array(IconSchema).optional()
 }).passthrough();
 var BaseMetadataSchema = external_exports.object({
   /** Intended for programmatic or logical use, but used as a display name in past specs or fallback */
   name: external_exports.string(),
   /**
-  * Intended for UI and end-user contexts — optimized to be human-readable and easily understood,
-  * even by those unfamiliar with domain-specific terminology.
-  *
-  * If not provided, the name should be used for display (except for Tool,
-  * where `annotations.title` should be given precedence over using `name`,
-  * if present).
-  */
+   * Intended for UI and end-user contexts — optimized to be human-readable and easily understood,
+   * even by those unfamiliar with domain-specific terminology.
+   *
+   * If not provided, the name should be used for display (except for Tool,
+   * where `annotations.title` should be given precedence over using `name`,
+   * if present).
+   */
   title: external_exports.optional(external_exports.string())
 }).passthrough();
 var ImplementationSchema = BaseMetadataSchema.extend({
@@ -10427,17 +10434,8 @@ var ImplementationSchema = BaseMetadataSchema.extend({
   /**
    * An optional URL of the website for this implementation.
    */
-  websiteUrl: external_exports.optional(external_exports.string()),
-  /**
-   * An optional list of icons for this implementation.
-   * This can be used by clients to display the implementation in a user interface.
-   * Each icon should have a `kind` property that specifies whether it is a data representation or a URL source, a `src` property that points to the icon file or data representation, and may also include a `mimeType` and `sizes` property.
-   * The `mimeType` property should be a valid MIME type for the icon file, such as "image/png" or "image/svg+xml".
-   * The `sizes` property should be a string that specifies one or more sizes at which the icon file can be used, such as "48x48" or "any" for scalable formats like SVG.
-   * The `sizes` property is optional, and if not provided, the client should assume that the icon can be used at any size.
-   */
-  icons: external_exports.optional(external_exports.array(IconSchema))
-});
+  websiteUrl: external_exports.optional(external_exports.string())
+}).merge(IconsSchema);
 var ClientCapabilitiesSchema = external_exports.object({
   /**
    * Experimental, non-standard capabilities that the client supports.
@@ -10627,15 +10625,11 @@ var ResourceSchema = BaseMetadataSchema.extend({
    */
   mimeType: external_exports.optional(external_exports.string()),
   /**
-   * An optional list of icons for this resource.
-   */
-  icons: external_exports.optional(external_exports.array(IconSchema)),
-  /**
    * See [MCP specification](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/47339c03c143bb4ec01a26e721a1b8fe66634ebe/docs/specification/draft/basic/index.mdx#general-fields)
    * for notes on _meta usage.
    */
   _meta: external_exports.optional(external_exports.object({}).passthrough())
-});
+}).merge(IconsSchema);
 var ResourceTemplateSchema = BaseMetadataSchema.extend({
   /**
    * A URI template (according to RFC 6570) that can be used to construct resource URIs.
@@ -10656,7 +10650,7 @@ var ResourceTemplateSchema = BaseMetadataSchema.extend({
    * for notes on _meta usage.
    */
   _meta: external_exports.optional(external_exports.object({}).passthrough())
-});
+}).merge(IconsSchema);
 var ListResourcesRequestSchema = PaginatedRequestSchema.extend({
   method: external_exports.literal("resources/list")
 });
@@ -10735,15 +10729,11 @@ var PromptSchema = BaseMetadataSchema.extend({
    */
   arguments: external_exports.optional(external_exports.array(PromptArgumentSchema)),
   /**
-   * An optional list of icons for this prompt.
-   */
-  icons: external_exports.optional(external_exports.array(IconSchema)),
-  /**
    * See [MCP specification](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/47339c03c143bb4ec01a26e721a1b8fe66634ebe/docs/specification/draft/basic/index.mdx#general-fields)
    * for notes on _meta usage.
    */
   _meta: external_exports.optional(external_exports.object({}).passthrough())
-});
+}).merge(IconsSchema);
 var ListPromptsRequestSchema = PaginatedRequestSchema.extend({
   method: external_exports.literal("prompts/list")
 });
@@ -10906,15 +10896,11 @@ var ToolSchema = BaseMetadataSchema.extend({
    */
   annotations: external_exports.optional(ToolAnnotationsSchema),
   /**
-   * An optional list of icons for this tool.
-   */
-  icons: external_exports.optional(external_exports.array(IconSchema)),
-  /**
    * See [MCP specification](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/47339c03c143bb4ec01a26e721a1b8fe66634ebe/docs/specification/draft/basic/index.mdx#general-fields)
    * for notes on _meta usage.
    */
   _meta: external_exports.optional(external_exports.object({}).passthrough())
-});
+}).merge(IconsSchema);
 var ListToolsRequestSchema = PaginatedRequestSchema.extend({
   method: external_exports.literal("tools/list")
 });
@@ -10964,16 +10950,7 @@ var CallToolRequestSchema = RequestSchema.extend({
 var ToolListChangedNotificationSchema = NotificationSchema.extend({
   method: external_exports.literal("notifications/tools/list_changed")
 });
-var LoggingLevelSchema = external_exports.enum([
-  "debug",
-  "info",
-  "notice",
-  "warning",
-  "error",
-  "critical",
-  "alert",
-  "emergency"
-]);
+var LoggingLevelSchema = external_exports.enum(["debug", "info", "notice", "warning", "error", "critical", "alert", "emergency"]);
 var SetLevelRequestSchema = RequestSchema.extend({
   method: external_exports.literal("logging/setLevel"),
   params: BaseRequestParamsSchema.extend({
@@ -11066,11 +11043,7 @@ var CreateMessageResultSchema = ResultSchema.extend({
    */
   stopReason: external_exports.optional(external_exports.enum(["endTurn", "stopSequence", "maxTokens"]).or(external_exports.string())),
   role: external_exports.enum(["user", "assistant"]),
-  content: external_exports.discriminatedUnion("type", [
-    TextContentSchema,
-    ImageContentSchema,
-    AudioContentSchema
-  ])
+  content: external_exports.discriminatedUnion("type", [TextContentSchema, ImageContentSchema, AudioContentSchema])
 });
 var BooleanSchemaSchema = external_exports.object({
   type: external_exports.literal("boolean"),
@@ -11100,12 +11073,7 @@ var EnumSchemaSchema = external_exports.object({
   enum: external_exports.array(external_exports.string()),
   enumNames: external_exports.optional(external_exports.array(external_exports.string()))
 }).passthrough();
-var PrimitiveSchemaDefinitionSchema = external_exports.union([
-  BooleanSchemaSchema,
-  StringSchemaSchema,
-  NumberSchemaSchema,
-  EnumSchemaSchema
-]);
+var PrimitiveSchemaDefinitionSchema = external_exports.union([BooleanSchemaSchema, StringSchemaSchema, NumberSchemaSchema, EnumSchemaSchema]);
 var ElicitRequestSchema = RequestSchema.extend({
   method: external_exports.literal("elicitation/create"),
   params: BaseRequestParamsSchema.extend({
@@ -11233,18 +11201,8 @@ var ClientNotificationSchema = external_exports.union([
   InitializedNotificationSchema,
   RootsListChangedNotificationSchema
 ]);
-var ClientResultSchema = external_exports.union([
-  EmptyResultSchema,
-  CreateMessageResultSchema,
-  ElicitResultSchema,
-  ListRootsResultSchema
-]);
-var ServerRequestSchema = external_exports.union([
-  PingRequestSchema,
-  CreateMessageRequestSchema,
-  ElicitRequestSchema,
-  ListRootsRequestSchema
-]);
+var ClientResultSchema = external_exports.union([EmptyResultSchema, CreateMessageResultSchema, ElicitResultSchema, ListRootsResultSchema]);
+var ServerRequestSchema = external_exports.union([PingRequestSchema, CreateMessageRequestSchema, ElicitRequestSchema, ListRootsRequestSchema]);
 var ServerNotificationSchema = external_exports.union([
   CancelledNotificationSchema,
   ProgressNotificationSchema,
@@ -11318,7 +11276,10 @@ var Protocol = class {
     const totalElapsed = Date.now() - info.startTime;
     if (info.maxTotalTimeout && totalElapsed >= info.maxTotalTimeout) {
       this._timeoutInfo.delete(messageId);
-      throw new McpError(ErrorCode.RequestTimeout, "Maximum total timeout exceeded", { maxTotalTimeout: info.maxTotalTimeout, totalElapsed });
+      throw new McpError(ErrorCode.RequestTimeout, "Maximum total timeout exceeded", {
+        maxTotalTimeout: info.maxTotalTimeout,
+        totalElapsed
+      });
     }
     clearTimeout(info.timeoutId);
     info.timeoutId = setTimeout(info.onTimeout, info.timeout);
@@ -13262,7 +13223,9 @@ var McpServer = class {
           _meta: tool._meta
         };
         if (tool.outputSchema) {
-          toolDefinition.outputSchema = zodToJsonSchema(tool.outputSchema, { strictUnions: true });
+          toolDefinition.outputSchema = zodToJsonSchema(tool.outputSchema, {
+            strictUnions: true
+          });
         }
         return toolDefinition;
       })
@@ -14143,7 +14106,15 @@ var ChildClient = class {
         reject(new Error(`RPC timeout for ${method}`));
       }, this.rpcTimeoutMs);
       this.pending.set(id, { resolve: resolve2, reject, timer });
-      this.process.stdin.write(json + "\n");
+      const isWrapper = this.meta.command?.args?.some((arg) => arg.includes("-claude-wrapper"));
+      if (isWrapper) {
+        this.process.stdin.write(json + "\n");
+      } else {
+        const msg = `Content-Length: ${Buffer.byteLength(json)}\r
+\r
+${json}`;
+        this.process.stdin.write(msg);
+      }
     });
   }
   async initialize() {
@@ -14392,6 +14363,320 @@ import { promisify } from "util";
 import { fileURLToPath } from "url";
 import readline from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
+
+// src/cli/wrapper-template.ts
+var CLAUDE_WRAPPER_TEMPLATE = String.raw`#!/usr/bin/env node
+
+import { spawn } from 'child_process';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { z } from 'zod';
+
+const TOOL_NAME = __TOOL_NAME__;
+const IDLE_TIMEOUT_MS = Number(process.env.SWITCHBOARD_INTELLIGENT_IDLE_MS || 600000);
+const CONVERSATION_TIMEOUT_MS = Number(process.env.SWITCHBOARD_CONVERSATION_TIMEOUT_MS || 120000);
+const SESSION_IDLE_TIMEOUT_MS = Number(process.env.SWITCHBOARD_SESSION_IDLE_MS || 300000); // 5 minutes
+
+// Session state
+let sessionId = null;
+let sessionLastActivity = Date.now();
+let sessionCleanupTimer = null;
+
+function startSessionCleanupTimer() {
+  if (sessionCleanupTimer) {
+    clearTimeout(sessionCleanupTimer);
+  }
+
+  sessionCleanupTimer = setTimeout(() => {
+    if (sessionId && Date.now() - sessionLastActivity > SESSION_IDLE_TIMEOUT_MS) {
+      console.error('[Wrapper] Specialist session idle timeout (' + Math.round(SESSION_IDLE_TIMEOUT_MS / 1000) + 's). Ending session gracefully.');
+      endSessionGracefully();
+    }
+  }, SESSION_IDLE_TIMEOUT_MS);
+}
+
+function endSessionGracefully() {
+  if (!sessionId) return;
+
+  console.error('[Wrapper] Ending specialist session: ' + sessionId);
+
+  // Let the session naturally expire or send a goodbye message
+  // Claude Code sessions will auto-cleanup on their own
+  sessionId = null;
+
+  if (sessionCleanupTimer) {
+    clearTimeout(sessionCleanupTimer);
+    sessionCleanupTimer = null;
+  }
+}
+
+async function conversWithClaudeCode(query, context, cwd, mcpConfigPath) {
+  return new Promise((resolve, reject) => {
+    const args = [
+      '--print',
+      '--model', 'sonnet', // Use Sonnet 4.5 by default (not Opus)
+      '--mcp-config', mcpConfigPath,
+      '--dangerously-skip-permissions',
+      '--output-format', 'json', // Use JSON to extract session ID
+    ];
+
+    // Resume previous session if exists
+    if (sessionId) {
+      args.push('--resume', sessionId);
+    } else if (context) {
+      // Only add system prompt on first call (not needed for resume)
+      args.push('--append-system-prompt', context);
+    }
+
+    args.push(query);
+
+    const claudeProcess = spawn('claude', args, {
+      cwd,
+      stdio: ['ignore', 'pipe', 'pipe'],
+      env: { ...process.env },
+    });
+
+    let buffer = '';
+    let errorBuffer = '';
+    let resolved = false;
+
+    const timeout = setTimeout(() => {
+      if (!resolved) {
+        resolved = true;
+        claudeProcess.kill();
+        reject(new Error('Claude Code conversation timeout after ' + CONVERSATION_TIMEOUT_MS + 'ms'));
+      }
+    }, CONVERSATION_TIMEOUT_MS);
+
+    claudeProcess.stdout.on('data', (chunk) => {
+      buffer += chunk.toString();
+    });
+
+    claudeProcess.stderr.on('data', (chunk) => {
+      errorBuffer += chunk.toString();
+    });
+
+    claudeProcess.on('error', (err) => {
+      if (!resolved) {
+        resolved = true;
+        clearTimeout(timeout);
+        reject(new Error('Failed to spawn claude headless: ' + err.message));
+      }
+    });
+
+    claudeProcess.on('exit', (code) => {
+      if (!resolved) {
+        resolved = true;
+        clearTimeout(timeout);
+        if (code === 0) {
+          try {
+            // Parse JSON response to extract session_id and result
+            const response = JSON.parse(buffer.trim());
+
+            // Store session ID for next call
+            if (response.session_id) {
+              const isNewSession = sessionId !== response.session_id;
+              sessionId = response.session_id;
+              sessionLastActivity = Date.now();
+
+              if (isNewSession) {
+                console.error('[Wrapper] Started specialist session: ' + sessionId);
+                startSessionCleanupTimer();
+              } else {
+                console.error('[Wrapper] Continued specialist session: ' + sessionId);
+                startSessionCleanupTimer(); // Reset timer
+              }
+            }
+
+            // Return result in MCP format
+            const result = response.result || response.content || buffer.trim();
+            resolve({ content: [{ type: 'text', text: result }] });
+          } catch (parseError) {
+            // Fallback if JSON parsing fails
+            resolve({ content: [{ type: 'text', text: buffer.trim() }] });
+          }
+        } else {
+          const errorMsg = errorBuffer.trim() || buffer.trim() || 'No output';
+          reject(new Error('Claude Code exited with code ' + code + '. Output: ' + errorMsg));
+        }
+      }
+    });
+  });
+}
+
+async function main() {
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = dirname(__filename);
+  const mcpConfigPath = join(__dirname, 'claude.mcp.json');
+
+  // Load CLAUDE.md for system prompt
+  let claudeInstructions = '';
+  try {
+    const { readFile } = await import('fs/promises');
+    claudeInstructions = await readFile(join(__dirname, 'CLAUDE.md'), 'utf8');
+  } catch {
+    claudeInstructions = 'You are a specialist for ' + TOOL_NAME + '. Use the available MCP tools to fulfill user requests.';
+  }
+
+  let lastActivity = Date.now();
+  const idleTimer =
+    IDLE_TIMEOUT_MS > 0
+      ? setInterval(() => {
+          if (Date.now() - lastActivity > IDLE_TIMEOUT_MS) {
+            console.error('🛑 Intelligent wrapper idle timeout reached. Shutting down ' + TOOL_NAME + '.');
+            process.exit(0);
+          }
+        }, Math.max(1000, Math.floor(IDLE_TIMEOUT_MS / 2)))
+      : null;
+
+  const server = new McpServer({
+    name: TOOL_NAME + '-claude-wrapper',
+    version: '0.1.0',
+    capabilities: { tools: {} },
+  });
+
+  server.tool(
+    'converse',
+    'Natural language interface for ' + TOOL_NAME + ' - powered by specialist Claude Code agent',
+    {
+      query: z.string().describe(
+        'Describe what you want the tool to achieve in natural language. A specialist Claude will use the ' + TOOL_NAME + ' MCP to fulfill your request.'
+      ),
+      context: z.string().optional().describe('Optional extra context, constraints, or background information.'),
+    },
+    async (args) => {
+      lastActivity = Date.now();
+      try {
+        const systemPrompt = claudeInstructions + (args.context ? '\n\nAdditional context: ' + args.context : '');
+        const result = await conversWithClaudeCode(args.query, systemPrompt, __dirname, mcpConfigPath);
+        return result;
+      } catch (error) {
+        throw new Error('Claude specialist failed: ' + error.message);
+      }
+    }
+  );
+
+  const transport = new StdioServerTransport();
+  await server.connect(transport);
+  console.error('Claude Code specialist wrapper for ' + TOOL_NAME + ' ready.');
+
+  const cleanup = () => {
+    if (idleTimer) clearInterval(idleTimer);
+    endSessionGracefully(); // End specialist session on shutdown
+  };
+
+  process.on('SIGINT', () => {
+    console.error('[Wrapper] Received SIGINT, cleaning up...');
+    cleanup();
+    process.exit(0);
+  });
+
+  process.on('SIGTERM', () => {
+    console.error('[Wrapper] Received SIGTERM, cleaning up...');
+    cleanup();
+    process.exit(0);
+  });
+
+  process.on('exit', () => {
+    cleanup();
+  });
+}
+
+main().catch((error) => {
+  console.error('❌ Claude wrapper failed:', error);
+  process.exit(1);
+});
+`;
+function createWrapperScript(toolName) {
+  return CLAUDE_WRAPPER_TEMPLATE.replace(/__TOOL_NAME__/g, JSON.stringify(toolName));
+}
+async function loadMcpDescriptions() {
+  try {
+    const { readFile: readFile4 } = await import("fs/promises");
+    const { join: join5 } = await import("path");
+    const { fileURLToPath: fileURLToPath2 } = await import("url");
+    const { dirname: dirname3 } = await import("path");
+    const projectRoot = process.cwd();
+    const descriptionsPath = join5(projectRoot, "mcp-descriptions.json");
+    const content = await readFile4(descriptionsPath, "utf8");
+    const data = JSON.parse(content);
+    return data.mcps || {};
+  } catch {
+    return null;
+  }
+}
+async function generateClaudeMd(mcpDir, mcpName, customInstructions) {
+  const { writeFile: writeFile4 } = await import("fs/promises");
+  const { join: join5 } = await import("path");
+  const descriptions = await loadMcpDescriptions();
+  const mcpDesc = descriptions?.[mcpName];
+  const instructions = customInstructions || mcpDesc?.claude || `Your role is to use this MCP server to handle ${mcpName} operations. Understand the user's intent and execute the appropriate MCP operations to fulfill their request efficiently and accurately.`;
+  const claudeMdContent = `# Claude Specialist for ${mcpName}
+
+## Your Role
+
+${instructions}
+
+**IMPORTANT**: You are a specialist for the **${mcpName} MCP ONLY**. You have access to ONLY this ONE MCP server and its tools. Use them to fulfill user requests.
+
+## CRITICAL: Execute Immediately, Don't Explain
+
+\u{1F6A8} **DO NOT explain what you CAN do. DO NOT list capabilities. DO NOT ask what the user wants.**
+
+When you receive a query:
+1. **IMMEDIATELY use the MCP tools** to answer it
+2. **EXECUTE the action** - don't describe what you would do
+3. **RETURN the actual result** - not a description of how you would get it
+
+### \u274C WRONG Behavior:
+- "I can help you with X, Y, Z. What would you like me to do?"
+- "I have access to these tools: ..."
+- "Let me know what specific operation you need"
+- "I understand you want X. I can do that using..."
+
+### \u2705 CORRECT Behavior:
+- User: "Count rows in users table"
+- You: *Immediately call the MCP tool* \u2192 "There are 1,247 rows in the users table."
+
+- User: "What are promise params in Next.js 15?"
+- You: *Immediately search the docs* \u2192 "Promise params in Next.js 15 are..."
+
+## Key Guidelines
+
+1. **Execute First**: Your FIRST action should be calling an MCP tool, not explaining
+2. **Be Direct**: Answer the question. Don't narrate what you're doing unless it fails
+3. **Handle Errors**: If a tool fails, try alternatives or explain what went wrong
+4. **Multi-Turn is OK**: The user can follow up with clarifications if needed
+
+## Self-Documentation
+
+**You should update this CLAUDE.md file** as you learn more about using the ${mcpName} MCP effectively. Add:
+
+### User Preferences
+<!-- Document user preferences for this MCP, e.g., preferred output formats, common parameters -->
+
+### Environment Variables
+<!-- Document important env variables like database names, API endpoints, etc. -->
+<!-- Example: DATABASE_NAME=production_db -->
+
+### Tips & Lessons Learned
+<!-- Document mistakes to avoid and best practices you've discovered -->
+<!-- Example: "Always validate input before calling insert operations" -->
+
+### Common Patterns
+<!-- Document frequently used workflows or operation sequences -->
+<!-- Example: "To update a record: 1) fetch current state, 2) modify, 3) update" -->
+
+---
+
+**Remember**: You are an ACTION-FIRST agent. The user's query is a command to execute, not a request for information about what you can do.
+`;
+  await writeFile4(join5(mcpDir, "CLAUDE.md"), claudeMdContent);
+}
+
+// src/cli/init.ts
 var mkdirAsync = promisify(mkdir);
 var writeFileAsync = promisify(writeFile);
 var readFileAsync = promisify(readFile);
@@ -14528,217 +14813,7 @@ function findMatchingDescription(mcpName, standardDescs) {
   }
   return null;
 }
-var CLAUDE_WRAPPER_TEMPLATE = String.raw`#!/usr/bin/env node
-
-import { spawn } from 'child_process';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-
-const TOOL_NAME = __TOOL_NAME__;
-const IDLE_TIMEOUT_MS = Number(process.env.SWITCHBOARD_INTELLIGENT_IDLE_MS || 600000);
-const CONVERSATION_TIMEOUT_MS = Number(process.env.SWITCHBOARD_CONVERSATION_TIMEOUT_MS || 120000);
-
-async function conversWithClaudeCode(query, context, cwd, mcpConfigPath) {
-  return new Promise((resolve, reject) => {
-    const args = [
-      '--print',
-      '--mcp-config', mcpConfigPath,
-      '--dangerously-skip-permissions',
-      '--output-format', 'text',
-    ];
-
-    // Add system prompt from CLAUDE.md if context provided
-    if (context) {
-      args.push('--append-system-prompt', context);
-    }
-
-    args.push(query);
-
-    const claudeProcess = spawn('claude', args, {
-      cwd,
-      stdio: ['ignore', 'pipe', 'inherit'],
-      env: { ...process.env },
-    });
-
-    let buffer = '';
-    let resolved = false;
-
-    const timeout = setTimeout(() => {
-      if (!resolved) {
-        resolved = true;
-        claudeProcess.kill();
-        reject(new Error('Claude Code conversation timeout after ' + CONVERSATION_TIMEOUT_MS + 'ms'));
-      }
-    }, CONVERSATION_TIMEOUT_MS);
-
-    claudeProcess.stdout.on('data', (chunk) => {
-      buffer += chunk.toString();
-    });
-
-    claudeProcess.on('error', (err) => {
-      if (!resolved) {
-        resolved = true;
-        clearTimeout(timeout);
-        reject(new Error('Failed to spawn claude headless: ' + err.message));
-      }
-    });
-
-    claudeProcess.on('exit', (code) => {
-      if (!resolved) {
-        resolved = true;
-        clearTimeout(timeout);
-        if (code === 0) {
-          resolve({ content: [{ type: 'text', text: buffer.trim() }] });
-        } else {
-          reject(new Error('Claude Code exited with code ' + code + '. Output: ' + buffer));
-        }
-      }
-    });
-  });
-}
-
-async function main() {
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = dirname(__filename);
-  const mcpConfigPath = join(__dirname, '.mcp.json');
-
-  // Load CLAUDE.md for system prompt
-  let claudeInstructions = '';
-  try {
-    const { readFile } = await import('fs/promises');
-    claudeInstructions = await readFile(join(__dirname, 'CLAUDE.md'), 'utf8');
-  } catch {
-    claudeInstructions = 'You are a specialist for ' + TOOL_NAME + '. Use the available MCP tools to fulfill user requests.';
-  }
-
-  let lastActivity = Date.now();
-  const idleTimer =
-    IDLE_TIMEOUT_MS > 0
-      ? setInterval(() => {
-          if (Date.now() - lastActivity > IDLE_TIMEOUT_MS) {
-            console.error('🛑 Intelligent wrapper idle timeout reached. Shutting down ' + TOOL_NAME + '.');
-            process.exit(0);
-          }
-        }, Math.max(1000, Math.floor(IDLE_TIMEOUT_MS / 2)))
-      : null;
-
-  const server = new McpServer({
-    name: TOOL_NAME + '-claude-wrapper',
-    version: '0.1.0',
-    capabilities: { tools: {} },
-  });
-
-  server.tool(
-    'converse',
-    'Natural language interface for ' + TOOL_NAME + ' - powered by specialist Claude Code agent',
-    {
-      type: 'object',
-      properties: {
-        query: {
-          type: 'string',
-          description:
-            'Describe what you want the tool to achieve in natural language. A specialist Claude will use the ' + TOOL_NAME + ' MCP to fulfill your request.',
-        },
-        context: {
-          type: 'string',
-          description: 'Optional extra context, constraints, or background information.',
-        },
-      },
-      required: ['query'],
-    },
-    async (args) => {
-      lastActivity = Date.now();
-      try {
-        const systemPrompt = claudeInstructions + (args.context ? '\n\nAdditional context: ' + args.context : '');
-        const result = await conversWithClaudeCode(args.query, systemPrompt, __dirname, mcpConfigPath);
-        return result;
-      } catch (error) {
-        throw new Error('Claude specialist failed: ' + error.message);
-      }
-    }
-  );
-
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
-  console.error('Claude Code specialist wrapper for ' + TOOL_NAME + ' ready.');
-
-  const cleanup = () => {
-    if (idleTimer) clearInterval(idleTimer);
-  };
-
-  process.on('SIGINT', () => {
-    cleanup();
-    process.exit(0);
-  });
-
-  process.on('SIGTERM', () => {
-    cleanup();
-    process.exit(0);
-  });
-
-  process.on('exit', () => cleanup());
-}
-
-main().catch((error) => {
-  console.error('❌ Claude wrapper failed:', error);
-  process.exit(1);
-});
-`;
-function createWrapperScript(toolName) {
-  return CLAUDE_WRAPPER_TEMPLATE.replace(/__TOOL_NAME__/g, JSON.stringify(toolName));
-}
-async function generateClaudeMd(mcpDir, mcpName) {
-  let claudeInstructions = "";
-  try {
-    const currentFile = fileURLToPath(import.meta.url);
-    const currentDir = dirname2(currentFile);
-    const possiblePaths = [
-      join2(currentDir, "..", "..", "mcp-descriptions.json"),
-      join2(currentDir, "..", "..", "..", "mcp-descriptions.json")
-    ];
-    for (const path of possiblePaths) {
-      if (existsSync2(path)) {
-        const content = await readFileAsync(path, "utf8");
-        const parsed = JSON.parse(content);
-        if (parsed.mcps && parsed.mcps[mcpName] && parsed.mcps[mcpName].claude) {
-          claudeInstructions = parsed.mcps[mcpName].claude;
-          break;
-        }
-      }
-    }
-  } catch {
-  }
-  if (!claudeInstructions) {
-    claudeInstructions = `Your role is to use this MCP server to handle ${mcpName} operations. Understand the user's intent and execute the appropriate MCP operations to fulfill their request efficiently and accurately.`;
-  }
-  const claudeMdContent = `# Claude Intelligent Wrapper for ${mcpName}
-
-## Instructions
-
-${claudeInstructions}
-
-## Key Guidelines
-
-1. **Understand Intent**: Carefully analyze what the user is trying to achieve
-2. **Choose the Right Tool**: Select the most appropriate MCP operation for the task
-3. **Handle Errors Gracefully**: If an operation fails, explain what happened and suggest alternatives
-4. **Provide Clear Feedback**: Let the user know what actions you're taking and their results
-
-## Available Operations
-
-When the user invokes this tool with a natural language query, you should:
-1. Parse their intent
-2. Map it to the appropriate MCP subtool
-3. Execute the operation with correct parameters
-4. Return clear, actionable results
-
-Remember: You are an intelligent interface that makes the ${mcpName} MCP server accessible through natural language.
-`;
-  await writeFileAsync(join2(mcpDir, "CLAUDE.md"), claudeMdContent);
-}
-async function enableIntelligentMode(mcpsDir, mcpNames) {
+async function enableClaudeMode(mcpsDir, mcpNames) {
   const wrapped = [];
   for (const name of mcpNames) {
     const mcpDir = join2(mcpsDir, name);
@@ -14761,7 +14836,7 @@ async function enableIntelligentMode(mcpsDir, mcpNames) {
     const wrapperScriptPath = join2(mcpDir, wrapperScriptName);
     await writeFileAsync(wrapperScriptPath, createWrapperScript(name));
     const originalDescription = originalConfig.switchboardDescription || `Natural language operations for ${name}`;
-    const wrapperDescription = `\u{1F916} Claude-assisted: ${originalDescription} (use subtool "natural_language" with a "query" string).`;
+    const wrapperDescription = `\u{1F916} Claude-assisted: ${originalDescription} (use subtool "converse" with a "query" string).`;
     const wrapperConfig = {
       name,
       description: originalConfig.description || `${name} MCP`,
@@ -14774,7 +14849,17 @@ async function enableIntelligentMode(mcpsDir, mcpNames) {
         }
       }
     };
+    const claudeCodeConfig = {
+      mcpServers: {
+        [name]: {
+          command: originalConfig.command.cmd,
+          args: originalConfig.command.args,
+          ...originalConfig.command.env && { env: originalConfig.command.env }
+        }
+      }
+    };
     await writeFileAsync(originalPath, JSON.stringify(wrapperConfig, null, 2));
+    await writeFileAsync(join2(mcpDir, "claude.mcp.json"), JSON.stringify(claudeCodeConfig, null, 2));
     wrapped.push(name);
   }
   return wrapped;
@@ -14845,26 +14930,30 @@ async function initSwitchboard(cwd) {
     const discoveredMcps = await listMcpDirectories(mcpsDir);
     let claudeWrapped = [];
     if (discoveredMcps.length > 0) {
-      const enableIntelligent = await promptYesNo(
-        "Enable Claude-powered intelligent switchboard?",
+      console.log("Choose your Switchboard mode:\n");
+      console.log("  1.0 (Standard)  - Direct MCP tool access with structured schemas");
+      console.log("  2.0 (Claude)    - Natural language interface powered by Claude specialists\n");
+      const useClaudeMode = await promptYesNo(
+        "Use Switchboard 2.0 (Claude mode)?",
         false
       );
       console.log("");
-      if (enableIntelligent) {
-        claudeWrapped = await enableIntelligentMode(mcpsDir, discoveredMcps);
+      if (useClaudeMode) {
+        console.log("\u{1F916} Initializing Switchboard 2.0 (Claude mode)...\n");
+        claudeWrapped = await enableClaudeMode(mcpsDir, discoveredMcps);
         if (claudeWrapped.length > 0) {
           console.log(
-            `\u{1F916} Claude-powered wrappers created for: ${claudeWrapped.join(", ")}`
+            `\u2705 Claude-powered wrappers created for: ${claudeWrapped.join(", ")}`
           );
           console.log(
-            "   Each tool now exposes a 'natural_language' subtool expecting a 'query' string."
+            "   Each tool now has a 'converse' subtool for natural language queries."
           );
         } else {
-          console.log("\u2139\uFE0F Intelligent mode requested, but no MCP configs were available to wrap.");
+          console.log("\u2139\uFE0F Switchboard 2.0 requested, but no MCP configs were available to wrap.");
         }
         console.log("");
       } else {
-        console.log("\u2139\uFE0F Intelligent mode skipped (using structured tool calls).");
+        console.log("\u{1F4E6} Using Switchboard 1.0 (Standard mode) - direct tool access.");
         console.log("");
       }
     }
@@ -14890,7 +14979,7 @@ async function initSwitchboard(cwd) {
     }
     if (claudeWrapped.length > 0) {
       console.log(
-        `  \u{1F916} Intelligent wrappers + archived originals for: ${claudeWrapped.join(", ")}`
+        `  \u{1F916} Switchboard 2.0 wrappers + archived originals for: ${claudeWrapped.join(", ")}`
       );
     }
     const newConfigContent = generateTopLevelMcpTemplate(existingConfig);
@@ -14913,9 +15002,15 @@ async function initSwitchboard(cwd) {
     }
     if (claudeWrapped.length > 0) {
       console.log("");
-      console.log("  \u2139\uFE0F Claude wrapper notes:");
+      console.log("  \u2139\uFE0F Switchboard 2.0 (Claude mode) notes:");
       console.log(
-        `     \u2022 Call the 'natural_language' subtool with a {"query"} string for AI assistance`
+        `     \u2022 Call the 'converse' subtool with a {"query"} string for natural language queries`
+      );
+      console.log(
+        "     \u2022 Specialists use Sonnet 4.5 by default (configurable with --model flag)"
+      );
+      console.log(
+        "     \u2022 Multi-turn conversations supported with automatic session management"
       );
       console.log(
         "     \u2022 Original MCP configs preserved in original/.mcp.json"
@@ -15275,24 +15370,32 @@ async function addMcpToSwitchboard(cwd, args) {
     config.switchboardDescription = `\u{1F504} Claude-managed: ${config.switchboardDescription}`;
     console.log("  \u2713 Configured to spawn Claude Code MCP server");
   } else if (options.claude) {
-    console.log("  \u{1F916} Creating Claude intelligent wrapper...");
+    console.log("  \u{1F916} Creating Switchboard 2.0 (Claude) wrapper...");
     const originalDir = join4(mcpDir, "original");
     await mkdirAsync2(originalDir, { recursive: true });
     await writeFileAsync3(
       join4(originalDir, ".mcp.json"),
       JSON.stringify(config, null, 2)
     );
+    await generateClaudeMd(mcpDir, mcpName);
     const sanitizedName = mcpName.replace(/[/@]/g, "-");
     const wrapperScriptName = `${sanitizedName}-claude-wrapper.mjs`;
     const wrapperScriptPath = join4(mcpDir, wrapperScriptName);
-    const wrapperContent = `#!/usr/bin/env node
-// Claude intelligent wrapper for ${mcpName}
-// This is a placeholder - the full implementation would be imported from init.ts
-console.error('Claude wrapper for ${mcpName} would run here');
-process.exit(1);
-`;
-    await writeFileAsync3(wrapperScriptPath, wrapperContent);
-    config.switchboardDescription = `\u{1F916} Claude-assisted: ${config.switchboardDescription} (use subtool "natural_language" with a "query" string).`;
+    await writeFileAsync3(wrapperScriptPath, createWrapperScript(mcpName));
+    const claudeCodeConfig = {
+      mcpServers: {
+        [mcpName]: {
+          command: config.command.cmd,
+          args: config.command.args,
+          ...config.command.env && { env: config.command.env }
+        }
+      }
+    };
+    await writeFileAsync3(
+      join4(mcpDir, "claude.mcp.json"),
+      JSON.stringify(claudeCodeConfig, null, 2)
+    );
+    config.switchboardDescription = `\u{1F916} Claude-assisted: ${config.switchboardDescription} (use subtool "converse" with a "query" string).`;
     config.command = {
       cmd: "node",
       args: [wrapperScriptName],
@@ -15300,7 +15403,10 @@ process.exit(1);
         SWITCHBOARD_INTELLIGENT_TARGET: mcpName
       }
     };
-    console.log(`  \u2713 Created Claude wrapper: ${wrapperScriptName}`);
+    console.log(`  \u2713 Created Switchboard 2.0 wrapper: ${wrapperScriptName}`);
+    console.log(`  \u2713 Created CLAUDE.md with action-first instructions`);
+    console.log(`  \u2713 Generated Claude Code format config (claude.mcp.json)`);
+    console.log(`  \u2713 Uses Sonnet 4.5 by default with multi-turn session support`);
   }
   const configPath = join4(mcpDir, ".mcp.json");
   await writeFileAsync3(configPath, JSON.stringify(config, null, 2));
@@ -15315,8 +15421,10 @@ process.exit(1);
     console.log("   \u2022 Learning updates written to CLAUDE.md");
     console.log("   \u2022 Idle timeout: 5 minutes (configurable via SWITCHBOARD_CHILD_IDLE_MS)");
   } else if (options.claude) {
-    console.log("\n   Claude wrapper notes:");
-    console.log('   \u2022 Call "natural_language" subtool with {"query": "your request"}');
+    console.log("\n   Switchboard 2.0 (Claude mode) notes:");
+    console.log('   \u2022 Call "converse" subtool with {"query": "your request"}');
+    console.log("   \u2022 Specialists use Sonnet 4.5 by default");
+    console.log("   \u2022 Multi-turn conversations with automatic session management");
     console.log("   \u2022 Original config preserved in original/.mcp.json");
   }
   console.log("\n   Restart your MCP host to use the new MCP via Switchboard.");

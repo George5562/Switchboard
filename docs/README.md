@@ -6,6 +6,50 @@ Comprehensive documentation for the Switchboard MCP proxy, including architectur
 
 ## 📚 Documentation Index
 
+### [Claude Mode Complete Guide](./claude-mode-guide.md) (NEW - v0.2.1+)
+
+**Comprehensive guide to Claude Mode with session management**
+
+Learn how to use natural language interfaces with MCPs:
+
+- Multi-turn conversation support (v0.2.1+)
+- Session management and persistence
+- CLAUDE.md template customization
+- MCP-specific specialist instructions
+- Performance optimization (19-21% faster follow-ups)
+- Troubleshooting and best practices
+- Migration from v0.2.0 to v0.2.1+
+
+**Read this if you want to:**
+
+- Use natural language to interact with MCPs
+- Enable multi-turn conversations with specialists
+- Understand how session management works
+- Customize specialist instructions
+- Debug Claude Mode issues
+
+---
+
+### [Session Examples](./session-examples.md) (NEW - v0.2.1+)
+
+**Real-world multi-turn conversation examples**
+
+See how session management enables natural workflows:
+
+- Before/after comparisons (v0.2.0 vs v0.2.1)
+- File operations with context
+- Database multi-step transactions
+- Performance benchmarks (40% faster overall)
+- Common patterns and use cases
+
+**Read this if you want to:**
+
+- See concrete examples of multi-turn conversations
+- Understand the performance benefits
+- Learn common conversation patterns
+
+---
+
 ### [Architecture](./architecture.md) (17 KB)
 
 **Detailed system design and data flow diagrams**
@@ -292,7 +336,18 @@ Same as Switchboard: MIT
 
 ---
 
-**Last Updated:** 2025-10-07
+**Last Updated:** 2025-10-09
+
+**v0.2.1 Updates:**
+- ✅ Session management for Claude Mode (multi-turn conversations)
+- ✅ Persistent specialist sessions with 5-minute idle timeout
+- ✅ 19-21% performance improvement on follow-up queries
+- ✅ CLAUDE.md templates with self-documentation sections
+- ✅ MCP-specific instructions from mcp-descriptions.json
+- ✅ Graceful session cleanup on shutdown
+- ✅ JSON-RPC framing fix for wrapper communication
+
+**v0.2.0 Features:**
 - Added CLI commands: `init`, `add`, `revert`
 - Two distinct operating modes: Standard (structured) and Claude (natural language)
 - Claude Mode uses headless `claude --print` (no API key needed)
@@ -300,4 +355,4 @@ Same as Switchboard: MIT
 - Backup files stored in `.switchboard/backups/`
 - Mode choice applies to entire setup (not per-MCP)
 
-**Version:** 0.1.0 (matches Switchboard release)
+**Version:** 0.2.1 (latest)

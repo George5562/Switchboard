@@ -3,6 +3,7 @@ import { join } from 'path';
 import { promisify } from 'util';
 import readline from 'node:readline/promises';
 import { stdin as input, stdout as output } from 'node:process';
+import { createWrapperScript, generateClaudeMd } from './wrapper-template.js';
 
 const readFileAsync = promisify(readFile);
 const writeFileAsync = promisify(writeFile);
@@ -192,34 +193,6 @@ _This file is managed by Switchboard SessionEnd hooks._
   console.log('  ✓ Created .state directory for session data');
 }
 
-function createClaudeWrapperScript(toolName: string): string {
-  // Reuse the template from init.ts
-  const CLAUDE_WRAPPER_TEMPLATE = String.raw`#!/usr/bin/env node
-
-import { readFile } from 'fs/promises';
-import { spawn } from 'child_process';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import Anthropic from '@anthropic-ai/sdk';
-
-const TOOL_NAME = __TOOL_NAME__;
-const MODEL = process.env.SWITCHBOARD_INTELLIGENT_MODEL || 'claude-3-5-sonnet-20241022';
-const IDLE_TIMEOUT_MS = Number(process.env.SWITCHBOARD_INTELLIGENT_IDLE_MS || 600000);
-const CHILD_TIMEOUT_MS = Number(process.env.SWITCHBOARD_CHILD_TIMEOUT_MS || 60000);
-
-// ... (rest of the wrapper code - abbreviated for brevity)
-// This would include the full wrapper implementation from init.ts
-
-main().catch((error) => {
-  console.error('❌ Claude wrapper failed:', error);
-  process.exit(1);
-});
-`;
-
-  return CLAUDE_WRAPPER_TEMPLATE.replace(/__TOOL_NAME__/g, JSON.stringify(toolName));
-}
 
 export async function addMcpToSwitchboard(cwd: string, args: string[]): Promise<void> {
   const { positional, options } = parseArgs(args);
@@ -334,34 +307,49 @@ export async function addMcpToSwitchboard(cwd: string, args: string[]): Promise<
 
     console.log('  ✓ Configured to spawn Claude Code MCP server');
   } else if (options.claude) {
-      console.log('  🤖 Creating Claude intelligent wrapper...');
+      console.log('  🤖 Creating Switchboard 2.0 (Claude) wrapper...');
 
       // Archive original config
       const originalDir = join(mcpDir, 'original');
       await mkdirAsync(originalDir, { recursive: true });
+
+      // Save original Switchboard format
       await writeFileAsync(
         join(originalDir, '.mcp.json'),
         JSON.stringify(config, null, 2)
       );
+
+      // Generate CLAUDE.md file for this MCP
+      await generateClaudeMd(mcpDir, mcpName);
 
       // Create wrapper script (sanitize name for filename safety)
       const sanitizedName = mcpName.replace(/[/@]/g, '-');
       const wrapperScriptName = `${sanitizedName}-claude-wrapper.mjs`;
       const wrapperScriptPath = join(mcpDir, wrapperScriptName);
 
-      // Note: In production, we'd import the full wrapper template
-      // For now, we'll create a placeholder
-      const wrapperContent = `#!/usr/bin/env node
-// Claude intelligent wrapper for ${mcpName}
-// This is a placeholder - the full implementation would be imported from init.ts
-console.error('Claude wrapper for ${mcpName} would run here');
-process.exit(1);
-`;
+      // Create the full wrapper using shared template
+      await writeFileAsync(wrapperScriptPath, createWrapperScript(mcpName));
 
-      await writeFileAsync(wrapperScriptPath, wrapperContent);
+      // Create Claude Code format config (for headless Claude to use)
+      // This goes alongside the wrapper as claude.mcp.json
+      const claudeCodeConfig = {
+        mcpServers: {
+          [mcpName]: {
+            command: config.command.cmd,
+            args: config.command.args,
+            ...(config.command.env && { env: config.command.env }),
+          },
+        },
+      };
 
-      // Update config to use wrapper
-      config.switchboardDescription = `🤖 Claude-assisted: ${config.switchboardDescription} (use subtool "natural_language" with a "query" string).`;
+      // Write Claude Code format config for headless Claude
+      await writeFileAsync(
+        join(mcpDir, 'claude.mcp.json'),
+        JSON.stringify(claudeCodeConfig, null, 2)
+      );
+
+      // Update config to wrapper config (for Switchboard to load)
+      config.switchboardDescription = `🤖 Claude-assisted: ${config.switchboardDescription} (use subtool "converse" with a "query" string).`;
       config.command = {
         cmd: 'node',
         args: [wrapperScriptName],
@@ -370,10 +358,13 @@ process.exit(1);
         },
       };
 
-      console.log(`  ✓ Created Claude wrapper: ${wrapperScriptName}`);
+      console.log(`  ✓ Created Switchboard 2.0 wrapper: ${wrapperScriptName}`);
+      console.log(`  ✓ Created CLAUDE.md with action-first instructions`);
+      console.log(`  ✓ Generated Claude Code format config (claude.mcp.json)`);
+      console.log(`  ✓ Uses Sonnet 4.5 by default with multi-turn session support`);
   }
 
-  // Write MCP config
+  // Write MCP config (.mcp.json is what Switchboard reads)
   const configPath = join(mcpDir, '.mcp.json');
   await writeFileAsync(configPath, JSON.stringify(config, null, 2));
 
@@ -388,8 +379,10 @@ process.exit(1);
     console.log('   • Learning updates written to CLAUDE.md');
     console.log('   • Idle timeout: 5 minutes (configurable via SWITCHBOARD_CHILD_IDLE_MS)');
   } else if (options.claude) {
-    console.log('\n   Claude wrapper notes:');
-    console.log('   • Call "natural_language" subtool with {"query": "your request"}');
+    console.log('\n   Switchboard 2.0 (Claude mode) notes:');
+    console.log('   • Call "converse" subtool with {"query": "your request"}');
+    console.log('   • Specialists use Sonnet 4.5 by default');
+    console.log('   • Multi-turn conversations with automatic session management');
     console.log('   • Original config preserved in original/.mcp.json');
   }
 

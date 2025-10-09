@@ -640,12 +640,12 @@ When Claude wrappers are enabled:
 
 ```
 ┌─────────────┐
-│  Main       │  natural_language query:
+│  Main       │  converse query:
 │  Claude     │  "remember my API key is xyz"
 │  Instance   │
 └──────┬──────┘
        │ Calls memory_suite with:
-       │ { action: "call", subtool: "natural_language",
+       │ { action: "call", subtool: "converse",
        │   args: { query: "remember my API key..." } }
        ▼
 ┌─────────────────────────────────────────────┐
@@ -690,7 +690,7 @@ When Claude wrappers are enabled:
 
 **2. Wrapper Script** (`*-claude-wrapper.mjs`)
 - Standalone MCP server using `@modelcontextprotocol/sdk`
-- Exposes single `natural_language` tool
+- Exposes single `converse` tool
 - Spawns and manages original child MCP
 - Calls Anthropic API to interpret queries
 - Maps natural language to MCP operations

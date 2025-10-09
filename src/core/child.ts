@@ -170,8 +170,17 @@ export class ChildClient {
 
       this.pending.set(id, { resolve, reject, timer });
 
-      // Write as newline-delimited JSON (MCP SDK standard)
-      this.process!.stdin!.write(json + '\n');
+      // Detect wrapper MCPs by checking if the command args contain "-claude-wrapper"
+      const isWrapper = this.meta.command?.args?.some(arg => arg.includes('-claude-wrapper'));
+
+      if (isWrapper) {
+        // Wrappers use MCP SDK's StdioServerTransport which expects newline-delimited JSON
+        this.process!.stdin!.write(json + '\n');
+      } else {
+        // Standard MCPs may use Content-Length framing
+        const msg = `Content-Length: ${Buffer.byteLength(json)}\r\n\r\n${json}`;
+        this.process!.stdin!.write(msg);
+      }
     });
   }
 

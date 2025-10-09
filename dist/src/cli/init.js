@@ -160,220 +160,8 @@ function findMatchingDescription(mcpName, standardDescs) {
     }
     return null;
 }
-const CLAUDE_WRAPPER_TEMPLATE = String.raw `#!/usr/bin/env node
-
-import { spawn } from 'child_process';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-
-const TOOL_NAME = __TOOL_NAME__;
-const IDLE_TIMEOUT_MS = Number(process.env.SWITCHBOARD_INTELLIGENT_IDLE_MS || 600000);
-const CONVERSATION_TIMEOUT_MS = Number(process.env.SWITCHBOARD_CONVERSATION_TIMEOUT_MS || 120000);
-
-async function conversWithClaudeCode(query, context, cwd, mcpConfigPath) {
-  return new Promise((resolve, reject) => {
-    const args = [
-      '--print',
-      '--mcp-config', mcpConfigPath,
-      '--dangerously-skip-permissions',
-      '--output-format', 'text',
-    ];
-
-    // Add system prompt from CLAUDE.md if context provided
-    if (context) {
-      args.push('--append-system-prompt', context);
-    }
-
-    args.push(query);
-
-    const claudeProcess = spawn('claude', args, {
-      cwd,
-      stdio: ['ignore', 'pipe', 'inherit'],
-      env: { ...process.env },
-    });
-
-    let buffer = '';
-    let resolved = false;
-
-    const timeout = setTimeout(() => {
-      if (!resolved) {
-        resolved = true;
-        claudeProcess.kill();
-        reject(new Error('Claude Code conversation timeout after ' + CONVERSATION_TIMEOUT_MS + 'ms'));
-      }
-    }, CONVERSATION_TIMEOUT_MS);
-
-    claudeProcess.stdout.on('data', (chunk) => {
-      buffer += chunk.toString();
-    });
-
-    claudeProcess.on('error', (err) => {
-      if (!resolved) {
-        resolved = true;
-        clearTimeout(timeout);
-        reject(new Error('Failed to spawn claude headless: ' + err.message));
-      }
-    });
-
-    claudeProcess.on('exit', (code) => {
-      if (!resolved) {
-        resolved = true;
-        clearTimeout(timeout);
-        if (code === 0) {
-          resolve({ content: [{ type: 'text', text: buffer.trim() }] });
-        } else {
-          reject(new Error('Claude Code exited with code ' + code + '. Output: ' + buffer));
-        }
-      }
-    });
-  });
-}
-
-async function main() {
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = dirname(__filename);
-  const mcpConfigPath = join(__dirname, '.mcp.json');
-
-  // Load CLAUDE.md for system prompt
-  let claudeInstructions = '';
-  try {
-    const { readFile } = await import('fs/promises');
-    claudeInstructions = await readFile(join(__dirname, 'CLAUDE.md'), 'utf8');
-  } catch {
-    claudeInstructions = 'You are a specialist for ' + TOOL_NAME + '. Use the available MCP tools to fulfill user requests.';
-  }
-
-  let lastActivity = Date.now();
-  const idleTimer =
-    IDLE_TIMEOUT_MS > 0
-      ? setInterval(() => {
-          if (Date.now() - lastActivity > IDLE_TIMEOUT_MS) {
-            console.error('🛑 Intelligent wrapper idle timeout reached. Shutting down ' + TOOL_NAME + '.');
-            process.exit(0);
-          }
-        }, Math.max(1000, Math.floor(IDLE_TIMEOUT_MS / 2)))
-      : null;
-
-  const server = new McpServer({
-    name: TOOL_NAME + '-claude-wrapper',
-    version: '0.1.0',
-    capabilities: { tools: {} },
-  });
-
-  server.tool(
-    'converse',
-    'Natural language interface for ' + TOOL_NAME + ' - powered by specialist Claude Code agent',
-    {
-      type: 'object',
-      properties: {
-        query: {
-          type: 'string',
-          description:
-            'Describe what you want the tool to achieve in natural language. A specialist Claude will use the ' + TOOL_NAME + ' MCP to fulfill your request.',
-        },
-        context: {
-          type: 'string',
-          description: 'Optional extra context, constraints, or background information.',
-        },
-      },
-      required: ['query'],
-    },
-    async (args) => {
-      lastActivity = Date.now();
-      try {
-        const systemPrompt = claudeInstructions + (args.context ? '\n\nAdditional context: ' + args.context : '');
-        const result = await conversWithClaudeCode(args.query, systemPrompt, __dirname, mcpConfigPath);
-        return result;
-      } catch (error) {
-        throw new Error('Claude specialist failed: ' + error.message);
-      }
-    }
-  );
-
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
-  console.error('Claude Code specialist wrapper for ' + TOOL_NAME + ' ready.');
-
-  const cleanup = () => {
-    if (idleTimer) clearInterval(idleTimer);
-  };
-
-  process.on('SIGINT', () => {
-    cleanup();
-    process.exit(0);
-  });
-
-  process.on('SIGTERM', () => {
-    cleanup();
-    process.exit(0);
-  });
-
-  process.on('exit', () => cleanup());
-}
-
-main().catch((error) => {
-  console.error('❌ Claude wrapper failed:', error);
-  process.exit(1);
-});
-`;
-function createWrapperScript(toolName) {
-    return CLAUDE_WRAPPER_TEMPLATE.replace(/__TOOL_NAME__/g, JSON.stringify(toolName));
-}
-async function generateClaudeMd(mcpDir, mcpName) {
-    // Load descriptions to get Claude-specific instructions
-    let claudeInstructions = '';
-    try {
-        const currentFile = fileURLToPath(import.meta.url);
-        const currentDir = dirname(currentFile);
-        const possiblePaths = [
-            join(currentDir, '..', '..', 'mcp-descriptions.json'),
-            join(currentDir, '..', '..', '..', 'mcp-descriptions.json'),
-        ];
-        for (const path of possiblePaths) {
-            if (existsSync(path)) {
-                const content = await readFileAsync(path, 'utf8');
-                const parsed = JSON.parse(content);
-                if (parsed.mcps && parsed.mcps[mcpName] && parsed.mcps[mcpName].claude) {
-                    claudeInstructions = parsed.mcps[mcpName].claude;
-                    break;
-                }
-            }
-        }
-    }
-    catch {
-        // Use default if not found
-    }
-    if (!claudeInstructions) {
-        claudeInstructions = `Your role is to use this MCP server to handle ${mcpName} operations. Understand the user's intent and execute the appropriate MCP operations to fulfill their request efficiently and accurately.`;
-    }
-    const claudeMdContent = `# Claude Intelligent Wrapper for ${mcpName}
-
-## Instructions
-
-${claudeInstructions}
-
-## Key Guidelines
-
-1. **Understand Intent**: Carefully analyze what the user is trying to achieve
-2. **Choose the Right Tool**: Select the most appropriate MCP operation for the task
-3. **Handle Errors Gracefully**: If an operation fails, explain what happened and suggest alternatives
-4. **Provide Clear Feedback**: Let the user know what actions you're taking and their results
-
-## Available Operations
-
-When the user invokes this tool with a natural language query, you should:
-1. Parse their intent
-2. Map it to the appropriate MCP subtool
-3. Execute the operation with correct parameters
-4. Return clear, actionable results
-
-Remember: You are an intelligent interface that makes the ${mcpName} MCP server accessible through natural language.
-`;
-    await writeFileAsync(join(mcpDir, 'CLAUDE.md'), claudeMdContent);
-}
-async function enableIntelligentMode(mcpsDir, mcpNames) {
+import { createWrapperScript, generateClaudeMd } from './wrapper-template.js';
+async function enableClaudeMode(mcpsDir, mcpNames) {
     const wrapped = [];
     for (const name of mcpNames) {
         const mcpDir = join(mcpsDir, name);
@@ -397,7 +185,8 @@ async function enableIntelligentMode(mcpsDir, mcpNames) {
         const wrapperScriptPath = join(mcpDir, wrapperScriptName);
         await writeFileAsync(wrapperScriptPath, createWrapperScript(name));
         const originalDescription = originalConfig.switchboardDescription || `Natural language operations for ${name}`;
-        const wrapperDescription = `🤖 Claude-assisted: ${originalDescription} (use subtool "natural_language" with a "query" string).`;
+        const wrapperDescription = `🤖 Claude-assisted: ${originalDescription} (use subtool "converse" with a "query" string).`;
+        // Create Switchboard format config (for wrapper to return to Switchboard)
         const wrapperConfig = {
             name,
             description: originalConfig.description || `${name} MCP`,
@@ -410,7 +199,22 @@ async function enableIntelligentMode(mcpsDir, mcpNames) {
                 },
             },
         };
+        // Create Claude Code format config (for headless Claude to use)
+        // This is what the wrapper's headless Claude will load
+        const claudeCodeConfig = {
+            mcpServers: {
+                [name]: {
+                    command: originalConfig.command.cmd,
+                    args: originalConfig.command.args,
+                    ...(originalConfig.command.env && { env: originalConfig.command.env }),
+                },
+            },
+        };
+        // Write configs:
+        // 1. Wrapper config for Switchboard to load (goes in MCP directory root as .mcp.json)
         await writeFileAsync(originalPath, JSON.stringify(wrapperConfig, null, 2));
+        // 2. Claude Code format for headless Claude to use (goes alongside wrapper)
+        await writeFileAsync(join(mcpDir, 'claude.mcp.json'), JSON.stringify(claudeCodeConfig, null, 2));
         wrapped.push(name);
     }
     return wrapped;
@@ -496,21 +300,25 @@ export async function initSwitchboard(cwd) {
         const discoveredMcps = await listMcpDirectories(mcpsDir);
         let claudeWrapped = [];
         if (discoveredMcps.length > 0) {
-            const enableIntelligent = await promptYesNo('Enable Claude-powered intelligent switchboard?', false);
+            console.log('Choose your Switchboard mode:\n');
+            console.log('  1.0 (Standard)  - Direct MCP tool access with structured schemas');
+            console.log('  2.0 (Claude)    - Natural language interface powered by Claude specialists\n');
+            const useClaudeMode = await promptYesNo('Use Switchboard 2.0 (Claude mode)?', false);
             console.log('');
-            if (enableIntelligent) {
-                claudeWrapped = await enableIntelligentMode(mcpsDir, discoveredMcps);
+            if (useClaudeMode) {
+                console.log('🤖 Initializing Switchboard 2.0 (Claude mode)...\n');
+                claudeWrapped = await enableClaudeMode(mcpsDir, discoveredMcps);
                 if (claudeWrapped.length > 0) {
-                    console.log(`🤖 Claude-powered wrappers created for: ${claudeWrapped.join(', ')}`);
-                    console.log("   Each tool now exposes a 'natural_language' subtool expecting a 'query' string.");
+                    console.log(`✅ Claude-powered wrappers created for: ${claudeWrapped.join(', ')}`);
+                    console.log("   Each tool now has a 'converse' subtool for natural language queries.");
                 }
                 else {
-                    console.log('ℹ️ Intelligent mode requested, but no MCP configs were available to wrap.');
+                    console.log('ℹ️ Switchboard 2.0 requested, but no MCP configs were available to wrap.');
                 }
                 console.log('');
             }
             else {
-                console.log('ℹ️ Intelligent mode skipped (using structured tool calls).');
+                console.log('📦 Using Switchboard 1.0 (Standard mode) - direct tool access.');
                 console.log('');
             }
         }
@@ -535,7 +343,7 @@ export async function initSwitchboard(cwd) {
             console.log('  📁 .switchboard/mcps/example-mcp/.mcp.json  (template MCP config)');
         }
         if (claudeWrapped.length > 0) {
-            console.log(`  🤖 Intelligent wrappers + archived originals for: ${claudeWrapped.join(', ')}`);
+            console.log(`  🤖 Switchboard 2.0 wrappers + archived originals for: ${claudeWrapped.join(', ')}`);
         }
         // Write the new .mcp.json configuration
         const newConfigContent = generateTopLevelMcpTemplate(existingConfig);
@@ -557,8 +365,10 @@ export async function initSwitchboard(cwd) {
         }
         if (claudeWrapped.length > 0) {
             console.log('');
-            console.log('  ℹ️ Claude wrapper notes:');
-            console.log("     • Call the 'natural_language' subtool with a {\"query\"} string for AI assistance");
+            console.log('  ℹ️ Switchboard 2.0 (Claude mode) notes:');
+            console.log("     • Call the 'converse' subtool with a {\"query\"} string for natural language queries");
+            console.log('     • Specialists use Sonnet 4.5 by default (configurable with --model flag)');
+            console.log('     • Multi-turn conversations supported with automatic session management');
             console.log('     • Original MCP configs preserved in original/.mcp.json');
         }
         console.log('');

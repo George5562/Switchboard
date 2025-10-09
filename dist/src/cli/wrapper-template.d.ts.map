@@ -1,0 +1,1 @@
+{"version":3,"file":"wrapper-template.d.ts","sourceRoot":"","sources":["../../../src/cli/wrapper-template.ts"],"names":[],"mappings":"AAAA;;;GAGG;AAEH,eAAO,MAAM,uBAAuB,QA+NnC,CAAC;AAEF;;GAEG;AACH,wBAAgB,mBAAmB,CAAC,QAAQ,EAAE,MAAM,GAAG,MAAM,CAE5D;AAwBD;;;GAGG;AACH,wBAAsB,gBAAgB,CACpC,MAAM,EAAE,MAAM,EACd,OAAO,EAAE,MAAM,EACf,kBAAkB,CAAC,EAAE,MAAM,GAC1B,OAAO,CAAC,IAAI,CAAC,CA4Ef"}
