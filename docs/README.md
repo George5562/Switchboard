@@ -6,6 +6,28 @@ Comprehensive documentation for the Switchboard MCP proxy, including architectur
 
 ## 📚 Documentation Index
 
+### [Plugin Integration Analysis](./plugin-integration.md) (NEW - future considerations)
+
+**Analysis of Claude Code plugin system for Switchboard distribution**
+
+Examines whether plugins can replace the npm package:
+
+- What plugins can and cannot do (static bundles vs. dynamic CLI)
+- Why the current CLI UX is already strong
+- Where plugins add genuine value (session monitoring, team distribution)
+- Recommended hybrid approach (npm as foundation, plugin as enhancement)
+- Implementation sketch (slash commands, advisor agent, hooks)
+- Decision: valuable but not urgent
+
+**Read this if you want to:**
+
+- Understand the relationship between npm package and plugins
+- Evaluate future distribution strategies
+- See what plugin-unique features are possible (session monitoring, presets)
+- Learn why sophisticated CLI logic can't be replaced by plugin prompts
+
+---
+
 ### [Claude Mode Complete Guide](./claude-mode-guide.md) (NEW - v0.2.1+)
 
 **Comprehensive guide to Claude Mode with session management**
@@ -222,6 +244,7 @@ Each issue includes:
 1. Start with [Architecture](./architecture.md) for high-level overview
 2. Check [Protocol Lessons](./mcp-protocol-lessons.md) to see what problems it solves
 3. Skim [Best Practices](./mcp-best-practices.md) to assess quality
+4. Review [Plugin Integration](./plugin-integration.md) for distribution strategies
 
 ---
 
@@ -261,13 +284,14 @@ Each issue includes:
 
 ## 📊 Documentation Statistics
 
-| Document         | Size        | Sections | Code Examples |
-| ---------------- | ----------- | -------- | ------------- |
-| Architecture     | 17 KB       | 16       | 20+           |
-| Protocol Lessons | 11 KB       | 9        | 25+           |
-| Troubleshooting  | 9.4 KB      | 9        | 30+           |
-| Best Practices   | 17 KB       | 20       | 40+           |
-| **Total**        | **54.4 KB** | **54**   | **115+**      |
+| Document            | Size        | Sections | Code Examples |
+| ------------------- | ----------- | -------- | ------------- |
+| Plugin Integration  | 14 KB       | 14       | 15+           |
+| Architecture        | 17 KB       | 16       | 20+           |
+| Protocol Lessons    | 11 KB       | 9        | 25+           |
+| Troubleshooting     | 9.4 KB      | 9        | 30+           |
+| Best Practices      | 17 KB       | 20       | 40+           |
+| **Total**           | **68.4 KB** | **68**   | **130+**      |
 
 ---
 
@@ -336,7 +360,11 @@ Same as Switchboard: MIT
 
 ---
 
-**Last Updated:** 2025-10-09
+**Last Updated:** 2025-10-10
+
+**Recent Documentation Updates:**
+- ✅ Plugin integration analysis (future distribution strategy)
+- ✅ Analysis of Claude Code plugin system vs. npm package
 
 **v0.2.1 Updates:**
 - ✅ Session management for Claude Mode (multi-turn conversations)

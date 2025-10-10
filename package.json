@@ -39,7 +39,7 @@
     "dist",
     "README.md",
     "LICENSE",
-    "mcp-descriptions.json"
+    "mcp-descriptions-library.json"
   ],
   "scripts": {
     "build": "esbuild src/index.ts --bundle --platform=node --format=esm --external:globby --external:fast-glob --external:fs --external:path --external:os --external:child_process --external:util --external:events --external:stream --external:url --outfile=dist/index.js && echo '#!/usr/bin/env node\\nimport(\"./index.js\");' > dist/switchboard && chmod +x dist/switchboard",

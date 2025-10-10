@@ -57,7 +57,7 @@ switchboard add git-mcp node ./git-server.js     # Custom command
 
 Switchboard offers two distinct architectures. **Choose one during `init`:**
 
-### 🔧 Standard Mode (Default)
+### Switchboard Original (Default)
 
 **What it is:** Token-efficient MCP aggregation with structured tool calls.
 
@@ -72,7 +72,7 @@ Switchboard offers two distinct architectures. **Choose one during `init`:**
 **Usage:**
 ```bash
 switchboard init
-# Choose "N" when prompted for Claude mode
+# Choose "N" when prompted for Claudeception mode
 ```
 
 **Example flow:**
@@ -83,7 +83,7 @@ Host → memory_suite.call(subtool: "create_entities", args: {...})
 
 ---
 
-### 🤖 Claude Mode (v0.2.1+)
+### Switchboard Claudeception
 
 **What it is:** Natural language interface powered by specialist Claude Code agents with **multi-turn conversation support**.
 
@@ -101,18 +101,29 @@ Real MCP (memory, filesystem, etc.)
 Each MCP gets a dedicated specialist Claude that:
 - Interprets natural language queries
 - Calls the appropriate MCP tools
-- **Remembers context across multiple calls** (v0.2.1+)
+- Remembers context across multiple calls
 - Returns results in plain English
 
-**Key Features (v0.2.1+):**
-- ✅ Multi-turn conversations (specialists remember context across calls)
-- ✅ Session persistence with automatic resume
-- ✅ Dramatically fewer input tokens on resumed calls
-- ✅ Increased cache reuse on subsequent turns
-- ✅ Automatic session cleanup (5-minute idle timeout)
-- ✅ Graceful shutdown handling with SIGTERM
+**Context Firewall Advantage:**
+Many MCPs return massive responses that consume tokens unnecessarily. For example:
+- Supabase responses: Often 10,000-15,000 tokens per query result
+- File system operations: Large file contents or directory listings
+- Database operations: Full result sets with metadata
 
-**Best for:** Natural language interfaces, complex multi-step operations, user-friendly interactions.
+Claudeception **firewalls this context wastage** to the specialist instance, replacing it with a concise natural language summary (typically ~500 tokens). Your main Claude Code session only sees the essential information, not the raw MCP response.
+
+This dramatically reduces your **main Claude Code's context usage** while maintaining full functionality.
+
+**Key Features:**
+- Multi-turn conversations (specialists remember context across calls)
+- Session persistence with automatic resume
+- Dramatically fewer input tokens on resumed calls
+- Increased cache reuse on subsequent turns
+- Automatic session cleanup (5-minute idle timeout)
+- Graceful shutdown handling with SIGTERM
+- Context firewall: Large MCP responses summarized to ~500 tokens
+
+**Best for:** Natural language interfaces, complex multi-step operations, MCPs with large responses, user-friendly interactions.
 
 **Requirements:**
 - Claude Code installed (`claude` command in PATH)
@@ -121,7 +132,7 @@ Each MCP gets a dedicated specialist Claude that:
 **Usage:**
 ```bash
 switchboard init
-# Choose "y" when prompted for Claude mode
+# Choose "y" when prompted for Claudeception mode
 
 # Install MCP SDK in each wrapper
 cd .switchboard/mcps/memory && npm install @modelcontextprotocol/sdk
@@ -143,9 +154,9 @@ Master Claude → memory_converse(query: "what note did I just store?")
 | `SWITCHBOARD_INTELLIGENT_IDLE_MS` | Wrapper idle timeout | 600000 (10 min) |
 | `SWITCHBOARD_CONVERSATION_TIMEOUT_MS` | Per-query timeout | 120000 (2 min) |
 
-**⚠️ Important:** Once you choose a mode during `init`, **all MCPs use that mode**. To switch modes, run `switchboard revert` then `switchboard init` again with a different choice.
+**Important:** Once you choose a mode during `init`, **all MCPs use that mode**. To switch modes, run `switchboard revert` then `switchboard init` again with a different choice.
 
-**📚 Full Guide:** See [docs/claude-mode-guide.md](./docs/claude-mode-guide.md) for complete documentation on session management, CLAUDE.md customization, and troubleshooting.
+**Full Guide:** See [docs/claude-mode-guide.md](./docs/claude-mode-guide.md) for complete documentation on session management, CLAUDE.md customization, and troubleshooting.
 
 ---
 
@@ -156,19 +167,19 @@ Master Claude → memory_converse(query: "what note did I just store?")
 Initialize Switchboard in your project. This command:
 - Creates `.switchboard/` directory structure with `mcps/` and `backups/` subdirectories
 - Migrates existing MCPs from `.mcp.json`
-- Auto-populates descriptions for 50+ common MCPs from `mcp-descriptions.json`
-- **Automatically updates your `.mcp.json`** to use Switchboard
+- Auto-populates descriptions for 50+ common MCPs from `mcp-descriptions-library.json`
+- Automatically updates your `.mcp.json` to use Switchboard
 - Creates timestamped backup in `.switchboard/backups/`
-- Optionally enables Claude intelligent wrappers with CLAUDE.md instructions
+- Optionally enables Claudeception wrappers with CLAUDE.md instructions
 
 ```bash
 switchboard init
-# Prompts for Claude wrapper option (y/N)
+# Prompts for Claudeception mode (y/N)
 ```
 
 ### `switchboard add`
 
-Add individual MCPs to an existing Switchboard setup. **Uses the same mode as `init`** (Standard or Claude).
+Add individual MCPs to an existing Switchboard setup. **Uses the same mode as `init`** (Original or Claudeception).
 
 ```bash
 # Basic usage (assumes npm package)
@@ -191,13 +202,13 @@ switchboard add git-mcp node ./git-server.js        # Custom command
 switchboard add database -d "Database operations"    # With description
 ```
 
-**Note:** The MCP will be configured in the same mode (Standard/Claude) that was chosen during `switchboard init`.
+**Note:** The MCP will be configured in the same mode (Original/Claudeception) that was chosen during `switchboard init`.
 
 ### `switchboard revert`
 
 Completely undo Switchboard initialization. This command:
 - Restores original `.mcp.json` from backup
-- Removes Claude wrapper scripts
+- Removes Claudeception wrapper scripts
 - Restores archived original MCP configs
 - Deletes `.switchboard/` directory
 - Allows clean re-initialization with different options
@@ -401,7 +412,7 @@ npm run test:e2e   # End-to-end tests
 
 ### Performance Benchmarks
 
-**Standard Mode:**
+**Switchboard Original:**
 - **Startup**: ~1000ms (includes child discovery)
 - **Tool Listing**: ~immediate (cached)
 - **Child Operations**: ~2000ms (spawn + RPC)
@@ -410,7 +421,7 @@ npm run test:e2e   # End-to-end tests
   - Typical aggregate: 85-90% (1,820+ → 200-300 tokens)
   - Large MCPs like Supabase: 95%+ (20,000+ → ~1,000 tokens)
 
-**Claude Mode Session Performance (v0.2.1+):**
+**Switchboard Claudeception Session Performance:**
 - **Cold Start (Turn 1)**: 20.4s with 21k cache creation tokens
 - **Warm Resume (Turn 2)**: Variable (task-dependent), with 267k cache read tokens
 - **Continued (Turn 3+)**: Similar to Turn 2, with 88k+ cache read tokens
