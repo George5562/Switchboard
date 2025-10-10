@@ -233,6 +233,7 @@ async function enableClaudeMode(mcpsDir: string, mcpNames: string[]): Promise<st
       name,
       description: originalConfig.description || `${name} MCP`,
       switchboardDescription: wrapperDescription,
+      type: 'claude-server' as const,
       command: {
         cmd: 'node',
         args: [wrapperScriptName],
@@ -429,17 +430,18 @@ export async function initSwitchboard(cwd: string): Promise<void> {
       console.log('');
     }
 
-    // Write the new .mcp.json configuration
+    // Write the new .mcp.json configuration (both modes)
     const newConfigContent = generateTopLevelMcpTemplate(existingConfig);
     await writeFileAsync(rootConfigPath, newConfigContent);
-    console.log(`Updated root .mcp.json to use Switchboard`);
-
+    console.log(`  ✅ Updated root .mcp.json to use Switchboard`);
     console.log('');
+
     console.log('Next steps:');
 
     let stepNumber = 1;
 
     if (claudeWrapped.length > 0) {
+      // Claudeception mode
       console.log(`  ${stepNumber++}. Update your CLAUDE.md to use 'converse' subtool with {"query"} string`);
       console.log(`  ${stepNumber++}. Review/refine Claudeception system prompts (.switchboard/mcps/*/CLAUDE.md)`);
       if (copiedMcps.length > 0) {
@@ -448,17 +450,20 @@ export async function initSwitchboard(cwd: string): Promise<void> {
           console.log(`      (Especially: ${needsEditing.join(', ')} - no library descriptions found)`);
         }
       }
-    } else if (copiedMcps.length > 0) {
-      const needsEditing = copiedMcps.filter((name) => !libraryDescriptions.includes(name));
-      if (needsEditing.length > 0) {
-        console.log(
-          `  ${stepNumber++}. Edit the "switchboardDescription" field for: ${needsEditing.join(', ')}`,
-        );
-        console.log('     (these need custom one-line descriptions for the LLM)');
-      }
     } else {
-      console.log(`  ${stepNumber++}. Copy your existing MCPs to .switchboard/mcps/[mcp-name]/.mcp.json`);
-      console.log(`  ${stepNumber++}. Edit the "switchboardDescription" field in each .mcp.json file`);
+      // Original mode
+      if (copiedMcps.length > 0) {
+        const needsEditing = copiedMcps.filter((name) => !libraryDescriptions.includes(name));
+        if (needsEditing.length > 0) {
+          console.log(
+            `  ${stepNumber++}. Edit the "switchboardDescription" field for: ${needsEditing.join(', ')}`,
+          );
+          console.log('     (these need custom one-line descriptions for the LLM)');
+        }
+      } else {
+        console.log(`  ${stepNumber++}. Copy your existing MCPs to .switchboard/mcps/[mcp-name]/.mcp.json`);
+        console.log(`  ${stepNumber++}. Edit the "switchboardDescription" field in each .mcp.json file`);
+      }
     }
 
     console.log(`  ${stepNumber}. Restart your MCP host (Claude Code, etc.) to load Switchboard`);

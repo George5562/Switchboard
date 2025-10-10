@@ -67,7 +67,15 @@ Switchboard offers two distinct architectures. **Choose one during `init`:**
 - Host calls `call` action with specific subtool name and args
 - Direct MCP communication, no intermediary
 
-**Best for:** Maximum compatibility, predictable behavior, no dependencies.
+**Token Savings Example:**
+
+![Context usage before Switchboard](images/context-before-switchboard-original.png)
+*Before: 23.6k tokens for 3 MCPs (context7, memory, supabase)*
+
+![Context usage after Switchboard Original](images/context-after-switchboard-original.png)
+*After Switchboard Original: 3.2k tokens (86% reduction)*
+
+**Best for:** Keeping multiple MCPs connectd and available, when you are not sure which one you will need.
 
 **Usage:**
 ```bash
@@ -110,20 +118,15 @@ Many MCPs return massive responses that consume tokens unnecessarily. For exampl
 - File system operations: Large file contents or directory listings
 - Database operations: Full result sets with metadata
 
+![Supabase MCP returning 16k tokens](images/supabasemcp-16k-example.png.png)
+*Example: Supabase query response consuming 16,000+ tokens when used - Claudeception firewalls this and summarizes to ~500 tokens*
+
 Claudeception **firewalls this context wastage** to the specialist instance, replacing it with a concise natural language summary (typically ~500 tokens). Your main Claude Code session only sees the essential information, not the raw MCP response.
 
 This dramatically reduces your **main Claude Code's context usage** while maintaining full functionality.
 
-**Key Features:**
-- Multi-turn conversations (specialists remember context across calls)
-- Session persistence with automatic resume
-- Dramatically fewer input tokens on resumed calls
-- Increased cache reuse on subsequent turns
-- Automatic session cleanup (5-minute idle timeout)
-- Graceful shutdown handling with SIGTERM
-- Context firewall: Large MCP responses summarized to ~500 tokens
 
-**Best for:** Natural language interfaces, complex multi-step operations, MCPs with large responses, user-friendly interactions.
+**Best for:** Better in general, but best for MCPs that return large amounts of context (supabase, playwright)
 
 **Requirements:**
 - Claude Code installed (`claude` command in PATH)

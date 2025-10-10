@@ -53,15 +53,29 @@ Content-Length: 123\r\n\r\n
 
 ### The Solution
 
-Implement a dual-protocol buffer processor that:
+**For Responses (Incoming)**: Implement a dual-protocol buffer processor that:
 
 1. Looks ahead to detect Content-Length headers
 2. Falls back to line-delimited parsing if no header found
 3. Skips non-JSON lines (log messages)
 
-**Implementation (simplified):**
+**For Requests (Outgoing)**: Always use newline-delimited JSON
+
+⚠️ **CRITICAL**: While responses can vary in format, **requests MUST always use newline-delimited JSON** (`json + '\n'`). This is the format expected by `@modelcontextprotocol/sdk`. Using Content-Length framing for requests breaks compatibility with most MCPs.
+
+**Implementation:**
 
 ```typescript
+// SENDING (Outgoing requests) - Always newline-delimited
+async send(method: string, params?: any): Promise<any> {
+  const message = { jsonrpc: '2.0', id: ++this.seq, method, params };
+  const json = JSON.stringify(message);
+
+  // ✅ Always use newline-delimited for requests
+  this.process.stdin.write(json + '\n');
+}
+
+// RECEIVING (Incoming responses) - Dual-format support
 private processBuffer(): void {
   while (true) {
     // Check first 20 bytes for Content-Length
@@ -92,7 +106,7 @@ private processBuffer(): void {
 }
 ```
 
-**Lesson:** Always design for protocol flexibility when proxying arbitrary MCPs.
+**Lesson:** Design for protocol flexibility in responses, but stick to newline-delimited for requests to maximize compatibility.
 
 ---
 

@@ -14034,6 +14034,10 @@ var ChildClient = class {
       await this.initialize();
     }
   }
+  /**
+   * Process incoming data buffer, handling both Content-Length and newline-delimited formats.
+   * This flexible parsing allows Switchboard to work with any MCP implementation.
+   */
   processBuffer() {
     while (true) {
       const bufferStart = this.buffer.toString("utf8", 0, Math.min(20, this.buffer.length));
@@ -14106,15 +14110,7 @@ var ChildClient = class {
         reject(new Error(`RPC timeout for ${method}`));
       }, this.rpcTimeoutMs);
       this.pending.set(id, { resolve: resolve2, reject, timer });
-      const isWrapper = this.meta.command?.args?.some((arg) => arg.includes("-claude-wrapper"));
-      if (isWrapper) {
-        this.process.stdin.write(json + "\n");
-      } else {
-        const msg = `Content-Length: ${Buffer.byteLength(json)}\r
-\r
-${json}`;
-        this.process.stdin.write(msg);
-      }
+      this.process.stdin.write(json + "\n");
     });
   }
   async initialize() {
@@ -14841,6 +14837,7 @@ async function enableClaudeMode(mcpsDir, mcpNames) {
       name,
       description: originalConfig.description || `${name} MCP`,
       switchboardDescription: wrapperDescription,
+      type: "claude-server",
       command: {
         cmd: "node",
         args: [wrapperScriptName],
@@ -14980,7 +14977,7 @@ async function initSwitchboard(cwd) {
     }
     const newConfigContent = generateTopLevelMcpTemplate(existingConfig);
     await writeFileAsync(rootConfigPath, newConfigContent);
-    console.log(`Updated root .mcp.json to use Switchboard`);
+    console.log(`  \u2705 Updated root .mcp.json to use Switchboard`);
     console.log("");
     console.log("Next steps:");
     let stepNumber = 1;
@@ -14993,17 +14990,19 @@ async function initSwitchboard(cwd) {
           console.log(`      (Especially: ${needsEditing.join(", ")} - no library descriptions found)`);
         }
       }
-    } else if (copiedMcps.length > 0) {
-      const needsEditing = copiedMcps.filter((name) => !libraryDescriptions.includes(name));
-      if (needsEditing.length > 0) {
-        console.log(
-          `  ${stepNumber++}. Edit the "switchboardDescription" field for: ${needsEditing.join(", ")}`
-        );
-        console.log("     (these need custom one-line descriptions for the LLM)");
-      }
     } else {
-      console.log(`  ${stepNumber++}. Copy your existing MCPs to .switchboard/mcps/[mcp-name]/.mcp.json`);
-      console.log(`  ${stepNumber++}. Edit the "switchboardDescription" field in each .mcp.json file`);
+      if (copiedMcps.length > 0) {
+        const needsEditing = copiedMcps.filter((name) => !libraryDescriptions.includes(name));
+        if (needsEditing.length > 0) {
+          console.log(
+            `  ${stepNumber++}. Edit the "switchboardDescription" field for: ${needsEditing.join(", ")}`
+          );
+          console.log("     (these need custom one-line descriptions for the LLM)");
+        }
+      } else {
+        console.log(`  ${stepNumber++}. Copy your existing MCPs to .switchboard/mcps/[mcp-name]/.mcp.json`);
+        console.log(`  ${stepNumber++}. Edit the "switchboardDescription" field in each .mcp.json file`);
+      }
     }
     console.log(`  ${stepNumber}. Restart your MCP host (Claude Code, etc.) to load Switchboard`);
     console.log("");
