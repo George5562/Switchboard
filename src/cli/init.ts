@@ -453,6 +453,10 @@ export async function initSwitchboard(cwd: string): Promise<void> {
 
     if (claudeWrapped.length > 0) {
       // Claudeception mode
+      console.log(`  ${stepNumber++}. \x1b[1mInstall wrapper dependencies (if not already installed):\x1b[0m`);
+      console.log(`      \x1b[1mnpm install zod @modelcontextprotocol/sdk\x1b[0m`);
+      console.log(`      (Required for wrapper scripts to run)`);
+      console.log('');
       console.log(`  ${stepNumber++}. Update your CLAUDE.md to use 'converse' subtool with {"query"} string`);
       console.log(`  ${stepNumber++}. Review/refine Claudeception system prompts (.switchboard/mcps/*/CLAUDE.md)`);
       if (copiedMcps.length > 0) {

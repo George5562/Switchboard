@@ -87,6 +87,24 @@ Each specialist receives tailored instructions from `mcp-descriptions.json`:
 
 ---
 
+## Installation Requirements
+
+**IMPORTANT**: Wrapper scripts require `zod` and `@modelcontextprotocol/sdk` to be installed:
+
+```bash
+npm install zod @modelcontextprotocol/sdk
+```
+
+Install these dependencies in your project root (where Switchboard is installed). The wrapper scripts will resolve them from `node_modules`.
+
+This is **required** for:
+- `switchboard init` with Claudeception mode
+- `switchboard add --claude`
+
+The `switchboard` CLI will display this command after setup.
+
+---
+
 ## Configuration
 
 ### Environment Variables

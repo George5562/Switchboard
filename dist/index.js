@@ -14982,6 +14982,10 @@ async function initSwitchboard(cwd) {
     console.log("Next steps:");
     let stepNumber = 1;
     if (claudeWrapped.length > 0) {
+      console.log(`  ${stepNumber++}. \x1B[1mInstall wrapper dependencies (if not already installed):\x1B[0m`);
+      console.log(`      \x1B[1mnpm install zod @modelcontextprotocol/sdk\x1B[0m`);
+      console.log(`      (Required for wrapper scripts to run)`);
+      console.log("");
       console.log(`  ${stepNumber++}. Update your CLAUDE.md to use 'converse' subtool with {"query"} string`);
       console.log(`  ${stepNumber++}. Review/refine Claudeception system prompts (.switchboard/mcps/*/CLAUDE.md)`);
       if (copiedMcps.length > 0) {
@@ -15413,6 +15417,9 @@ Successfully added "${mcpName}" to Switchboard!`);
     console.log("   - Specialists use Sonnet 4.5 by default");
     console.log("   - Multi-turn conversations with automatic session management");
     console.log("   - Original config preserved in original/.mcp.json");
+    console.log("");
+    console.log("   \x1B[1mEnsure wrapper dependencies are installed:\x1B[0m");
+    console.log("   \x1B[1mnpm install zod @modelcontextprotocol/sdk\x1B[0m");
   }
   console.log("\n   Restart your MCP host to use the new MCP via Switchboard.");
 }

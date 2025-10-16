@@ -393,6 +393,9 @@ export async function addMcpToSwitchboard(cwd: string, args: string[]): Promise<
     console.log('   - Specialists use Sonnet 4.5 by default');
     console.log('   - Multi-turn conversations with automatic session management');
     console.log('   - Original config preserved in original/.mcp.json');
+    console.log('');
+    console.log('   \x1b[1mEnsure wrapper dependencies are installed:\x1b[0m');
+    console.log('   \x1b[1mnpm install zod @modelcontextprotocol/sdk\x1b[0m');
   }
 
   console.log('\n   Restart your MCP host to use the new MCP via Switchboard.');

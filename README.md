@@ -97,16 +97,15 @@ Claudeception **firewalls this context wastage** to the specialist instance, rep
 **Requirements:**
 - Claude Code installed (`claude` command in PATH)
 - Claude Code subscription (no API key needed!)
+- **Dependencies**: `npm install zod @modelcontextprotocol/sdk` in project root (CLI will show exact command)
 
 **Usage:**
 ```bash
 switchboard init
 # Choose "y" when prompted for Claudeception mode
 
-# Install MCP SDK in each wrapper
-cd .switchboard/mcps/memory && npm install @modelcontextprotocol/sdk zod
-cd ../context7 && npm install @modelcontextprotocol/sdk zod
-cd ../supabase && npm install @modelcontextprotocol/sdk zod
+# Install wrapper dependencies (required!)
+npm install zod @modelcontextprotocol/sdk
 ```
 
 **Example flow (with context memory):**
