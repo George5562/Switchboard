@@ -1,3 +1,11 @@
+---
+related_code:
+  - src/core/child.ts
+  - src/core/router.ts
+  - src/index.ts
+tags: [mcp-protocol, stdio, json-rpc, lessons-learned]
+---
+
 # MCP Protocol: Lessons Learned
 
 ## Overview

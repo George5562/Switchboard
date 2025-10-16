@@ -1,3 +1,13 @@
+---
+related_code:
+  - src/core/child.ts
+  - src/core/router.ts
+  - src/core/registry.ts
+  - src/cli/init.ts
+  - src/cli/revert.ts
+tags: [troubleshooting, debugging, errors, solutions]
+---
+
 # Switchboard Troubleshooting Guide
 
 ## Common Issues and Solutions

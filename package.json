@@ -1,6 +1,6 @@
 {
   "name": "@george5562/switchboard",
-  "version": "0.1.1",
+  "version": "0.1.3",
   "description": "Stdio proxy MCP: one top-level tool per MCP, lazy subtool expansion.",
   "keywords": [
     "mcp",
@@ -62,7 +62,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
-    "@modelcontextprotocol/sdk": "^1.19.1",
+    "@modelcontextprotocol/sdk": "^1.20.0",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
     "@semantic-release/npm": "^11.0.3",

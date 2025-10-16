@@ -1,3 +1,12 @@
+---
+related_code:
+  - src/cli/wrapper-template.ts
+  - src/cli/init.ts
+  - src/cli/add.ts
+  - src/core/child.ts
+tags: [claude-mode, claudeception, session-management, wrapper]
+---
+
 # Claude Mode Complete Guide
 
 ## Overview

@@ -1,3 +1,12 @@
+---
+related_code:
+  - src/core/child.ts
+  - src/core/router.ts
+  - src/core/registry.ts
+  - src/core/config.ts
+tags: [best-practices, guidelines, mcp-development, patterns]
+---
+
 # MCP Implementation Best Practices
 
 Based on lessons learned building Switchboard, a proxy MCP that communicates with multiple child MCPs.

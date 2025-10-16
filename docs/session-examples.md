@@ -1,3 +1,10 @@
+---
+related_code:
+  - src/cli/wrapper-template.ts
+  - src/core/child.ts
+tags: [claude-mode, session-management, examples, multi-turn]
+---
+
 # Session Management Example: Multi-Turn Conversation
 
 ## Scenario: Using Memory MCP with Session Persistence

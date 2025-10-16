@@ -1,3 +1,13 @@
+---
+related_code:
+  - src/index.ts
+  - src/core/router.ts
+  - src/core/child.ts
+  - src/core/registry.ts
+  - src/core/config.ts
+tags: [architecture, system-design, proxy, mcp]
+---
+
 # Switchboard Architecture
 
 ## Overview
