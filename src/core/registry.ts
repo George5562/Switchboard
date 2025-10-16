@@ -1,3 +1,12 @@
+/**
+ * @module core/registry
+ * @description Child MCP discovery and configuration registry. Scans for .mcp.json files
+ * using glob patterns and builds a registry of available child MCPs with their metadata.
+ *
+ * @see {@link ../../docs/architecture.md#mcp-discovery} - Discovery mechanism
+ * @see {@link ../../docs/mcp-best-practices.md#configuration} - Config structure
+ */
+
 import { globby } from 'globby';
 import { readFileSync } from 'fs';
 import { dirname, resolve } from 'path';

@@ -1,4 +1,14 @@
 /**
+ * @module cli/wrapper-template
+ * @description Claude Mode wrapper script template and CLAUDE.md generation. Creates
+ * wrapper scripts that spawn headless Claude Code instances with session management
+ * for natural language MCP interaction.
+ *
+ * @see {@link ../../docs/claude-mode-guide.md} - Claude Mode architecture
+ * @see {@link ../../docs/session-examples.md} - Session management examples
+ */
+
+/**
  * Shared template for Claude-powered intelligent MCP wrapper scripts.
  * Used by both `switchboard init --claude` and `switchboard add --claude`.
  */

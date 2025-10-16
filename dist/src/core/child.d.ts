@@ -10,6 +10,17 @@ interface PendingRequest {
     reject: (error: any) => void;
     timer?: NodeJS.Timeout;
 }
+/**
+ * Client for communicating with child MCP processes via stdio.
+ *
+ * Message Protocol:
+ * - OUTGOING (requests): Always newline-delimited JSON (MCP SDK standard)
+ * - INCOMING (responses): Supports both Content-Length framing and newline-delimited JSON
+ *
+ * This dual-format support ensures compatibility with all MCP implementations:
+ * - MCPs built with @modelcontextprotocol/sdk use newline-delimited
+ * - Some custom MCPs may use Content-Length framing
+ */
 export declare class ChildClient {
     protected meta: ChildMeta;
     protected rpcTimeoutMs: number;
@@ -21,6 +32,10 @@ export declare class ChildClient {
     protected initialized: boolean;
     constructor(meta: ChildMeta, rpcTimeoutMs?: number);
     private ensureStarted;
+    /**
+     * Process incoming data buffer, handling both Content-Length and newline-delimited formats.
+     * This flexible parsing allows Switchboard to work with any MCP implementation.
+     */
     private processBuffer;
     private handleMessage;
     protected send(method: string, params?: any): Promise<any>;

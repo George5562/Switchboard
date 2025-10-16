@@ -1,3 +1,14 @@
+/**
+ * @module cli/init
+ * @description Switchboard initialization command. Sets up .switchboard directory structure,
+ * migrates existing MCPs from .mcp.json, prompts for mode selection (Original vs Claudeception),
+ * and creates wrapper scripts for Claude Mode.
+ *
+ * @see {@link ../../docs/architecture.md#initialization} - Initialization flow
+ * @see {@link ../../docs/claude-mode-guide.md} - Claude Mode setup
+ * @see {@link ../../docs/troubleshooting-guide.md} - Common init issues
+ */
+
 import { mkdir, writeFile, existsSync, readFile, rename } from 'fs';
 import type { Dirent } from 'fs';
 import { readdir } from 'fs/promises';

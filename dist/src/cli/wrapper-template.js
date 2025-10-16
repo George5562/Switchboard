@@ -222,7 +222,7 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error('❌ Claude wrapper failed:', error);
+  console.error('Claude wrapper failed:', error);
   process.exit(1);
 });
 `;
@@ -233,7 +233,7 @@ export function createWrapperScript(toolName) {
     return CLAUDE_WRAPPER_TEMPLATE.replace(/__TOOL_NAME__/g, JSON.stringify(toolName));
 }
 /**
- * Loads MCP descriptions from mcp-descriptions.json
+ * Loads MCP descriptions from mcp-descriptions-library.json
  */
 async function loadMcpDescriptions() {
     try {
@@ -241,9 +241,9 @@ async function loadMcpDescriptions() {
         const { join } = await import('path');
         const { fileURLToPath } = await import('url');
         const { dirname } = await import('path');
-        // Try to find mcp-descriptions.json in the project root
+        // Try to find mcp-descriptions-library.json in the project root
         const projectRoot = process.cwd();
-        const descriptionsPath = join(projectRoot, 'mcp-descriptions.json');
+        const descriptionsPath = join(projectRoot, 'mcp-descriptions-library.json');
         const content = await readFile(descriptionsPath, 'utf8');
         const data = JSON.parse(content);
         return data.mcps || {};
@@ -254,15 +254,15 @@ async function loadMcpDescriptions() {
 }
 /**
  * Generates CLAUDE.md instructions for a specific MCP.
- * Uses mcp-descriptions.json if available for MCP-specific context.
+ * Uses mcp-descriptions-library.json if available for MCP-specific context.
  */
 export async function generateClaudeMd(mcpDir, mcpName, customInstructions) {
     const { writeFile } = await import('fs/promises');
     const { join } = await import('path');
-    // Load descriptions from mcp-descriptions.json
+    // Load descriptions from mcp-descriptions-library.json
     const descriptions = await loadMcpDescriptions();
     const mcpDesc = descriptions?.[mcpName];
-    // Use description from mcp-descriptions.json if available
+    // Use description from mcp-descriptions-library.json if available
     const instructions = customInstructions ||
         mcpDesc?.claude ||
         `Your role is to use this MCP server to handle ${mcpName} operations. Understand the user's intent and execute the appropriate MCP operations to fulfill their request efficiently and accurately.`;

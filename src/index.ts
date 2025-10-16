@@ -1,5 +1,16 @@
 #!/usr/bin/env node
 
+/**
+ * @module index
+ * @description Main entrypoint for Switchboard MCP proxy. Handles CLI commands (init, add, revert)
+ * and MCP server initialization. Creates suite tools for each child MCP and routes calls through
+ * the router module.
+ *
+ * @see {@link ../docs/architecture.md} - Complete system architecture
+ * @see {@link ../docs/mcp-protocol-lessons.md} - MCP protocol implementation
+ * @see {@link ../docs/troubleshooting-guide.md} - Common issues and solutions
+ */
+
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';

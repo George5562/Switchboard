@@ -1,3 +1,15 @@
+/**
+ * @module core/child
+ * @description Child MCP process management and stdio communication. Handles spawning,
+ * message routing, dual-format protocol parsing (Content-Length + newline-delimited JSON),
+ * and session management for Claude Mode.
+ *
+ * @see {@link ../../docs/architecture.md#child-process-management} - Process lifecycle
+ * @see {@link ../../docs/mcp-protocol-lessons.md#stdio-protocol-variations} - Protocol formats
+ * @see {@link ../../docs/claude-mode-guide.md} - Claude Mode session management
+ * @see {@link ../../docs/troubleshooting-guide.md#child-mcp-times-out} - Debugging child issues
+ */
+
 import { spawn, ChildProcess } from 'child_process';
 import { ChildMeta } from './registry.js';
 

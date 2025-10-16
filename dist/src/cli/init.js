@@ -10,8 +10,8 @@ const writeFileAsync = promisify(writeFile);
 const readFileAsync = promisify(readFile);
 const renameAsync = promisify(rename);
 const readdirAsync = readdir;
-async function getStandardDescriptions() {
-    // Try to load from mcp-descriptions.json file
+async function getLibraryDescriptions() {
+    // Try to load from mcp-descriptions-library.json file
     // This file should be in the package root after npm install
     const fallbackDescriptions = {
         memory: 'Persistent memory storage for conversations and data across sessions',
@@ -24,14 +24,14 @@ async function getStandardDescriptions() {
         // Get the path to this module
         const currentFile = fileURLToPath(import.meta.url);
         const currentDir = dirname(currentFile);
-        // Try multiple paths to find mcp-descriptions.json
+        // Try multiple paths to find mcp-descriptions-library.json
         const possiblePaths = [
             // Development: src/cli/../.. -> project root
-            join(currentDir, '..', '..', 'mcp-descriptions.json'),
+            join(currentDir, '..', '..', 'mcp-descriptions-library.json'),
             // Built: dist/src/cli/../.. -> project root
-            join(currentDir, '..', '..', '..', 'mcp-descriptions.json'),
+            join(currentDir, '..', '..', '..', 'mcp-descriptions-library.json'),
             // Global install: node_modules/switchboard/
-            join(currentDir, '..', 'mcp-descriptions.json'),
+            join(currentDir, '..', 'mcp-descriptions-library.json'),
         ];
         for (const path of possiblePaths) {
             if (existsSync(path)) {
@@ -52,11 +52,11 @@ async function getStandardDescriptions() {
                 return parsed.properties || parsed;
             }
         }
-        console.warn('Warning: mcp-descriptions.json not found, using minimal fallback descriptions');
+        console.warn('Warning: mcp-descriptions-library.json not found, using minimal fallback descriptions');
         return fallbackDescriptions;
     }
     catch (error) {
-        console.warn('Warning: Failed to load mcp-descriptions.json, using fallback descriptions:', error);
+        console.warn('Warning: Failed to load mcp-descriptions-library.json, using fallback descriptions:', error);
         return fallbackDescriptions;
     }
 }
@@ -126,20 +126,20 @@ async function listMcpDirectories(mcpsDir) {
     }
     return names;
 }
-function findMatchingDescription(mcpName, standardDescs) {
+function findMatchingDescription(mcpName, libraryDescs) {
     // Try exact match first
-    if (standardDescs[mcpName]) {
-        return standardDescs[mcpName];
+    if (libraryDescs[mcpName]) {
+        return libraryDescs[mcpName];
     }
     // Try case-insensitive exact match
     const lowerMcpName = mcpName.toLowerCase();
-    for (const [key, value] of Object.entries(standardDescs)) {
+    for (const [key, value] of Object.entries(libraryDescs)) {
         if (key.toLowerCase() === lowerMcpName) {
             return value;
         }
     }
     // Try with " MCP" suffix
-    for (const [key, value] of Object.entries(standardDescs)) {
+    for (const [key, value] of Object.entries(libraryDescs)) {
         if (key.toLowerCase() === `${lowerMcpName} mcp`) {
             return value;
         }
@@ -149,7 +149,7 @@ function findMatchingDescription(mcpName, standardDescs) {
         .replace(/^mcp[-_]?/i, '')
         .replace(/[-_]?mcp$/i, '')
         .toLowerCase();
-    for (const [key, value] of Object.entries(standardDescs)) {
+    for (const [key, value] of Object.entries(libraryDescs)) {
         const cleanedKey = key
             .replace(/^mcp[-_]?/i, '')
             .replace(/[-_]?mcp$/i, '')
@@ -185,12 +185,13 @@ async function enableClaudeMode(mcpsDir, mcpNames) {
         const wrapperScriptPath = join(mcpDir, wrapperScriptName);
         await writeFileAsync(wrapperScriptPath, createWrapperScript(name));
         const originalDescription = originalConfig.switchboardDescription || `Natural language operations for ${name}`;
-        const wrapperDescription = `🤖 Claude-assisted: ${originalDescription} (use subtool "converse" with a "query" string).`;
+        const wrapperDescription = `Claude-assisted: ${originalDescription} (use subtool "converse" with a "query" string).`;
         // Create Switchboard format config (for wrapper to return to Switchboard)
         const wrapperConfig = {
             name,
             description: originalConfig.description || `${name} MCP`,
             switchboardDescription: wrapperDescription,
+            type: 'claude-server',
             command: {
                 cmd: 'node',
                 args: [wrapperScriptName],
@@ -222,13 +223,13 @@ async function enableClaudeMode(mcpsDir, mcpNames) {
 async function copyExistingMcps(existingConfig, switchboardDir) {
     const mcpsDir = join(switchboardDir, 'mcps');
     const copiedMcps = [];
-    const standardDescriptions = [];
-    // Get standard descriptions
-    const standardDescs = await getStandardDescriptions();
+    const libraryDescriptions = [];
+    // Get library descriptions
+    const libraryDescs = await getLibraryDescriptions();
     // Support both "mcps" and "mcpServers" keys
     const mcpsSection = existingConfig?.mcps || existingConfig?.mcpServers;
     if (!mcpsSection) {
-        return { copiedMcps, standardDescriptions };
+        return { copiedMcps, libraryDescriptions };
     }
     for (const [mcpName, mcpConfig] of Object.entries(mcpsSection)) {
         if (mcpName === 'switchboard')
@@ -242,11 +243,11 @@ async function copyExistingMcps(existingConfig, switchboardDir) {
             args: mcpConfig.args || [],
             ...(mcpConfig.env && { env: mcpConfig.env }),
         };
-        // Use standard description if available, otherwise use placeholder
-        const standardDesc = findMatchingDescription(mcpName, standardDescs);
-        const switchboardDescription = standardDesc || `describe what ${mcpName} does in one line for the LLM`;
-        if (standardDesc) {
-            standardDescriptions.push(mcpName);
+        // Use library description if available, otherwise use placeholder
+        const libraryDesc = findMatchingDescription(mcpName, libraryDescs);
+        const switchboardDescription = libraryDesc || `describe what ${mcpName} does in one line for the LLM`;
+        if (libraryDesc) {
+            libraryDescriptions.push(mcpName);
         }
         const mcpJsonContent = {
             name: mcpName,
@@ -257,10 +258,10 @@ async function copyExistingMcps(existingConfig, switchboardDir) {
         await writeFileAsync(join(mcpDir, '.mcp.json'), JSON.stringify(mcpJsonContent, null, 2));
         copiedMcps.push(mcpName);
     }
-    return { copiedMcps, standardDescriptions };
+    return { copiedMcps, libraryDescriptions };
 }
 export async function initSwitchboard(cwd) {
-    console.log('\n🚀 Initializing Switchboard...\n');
+    console.log('\nInitializing Switchboard...\n');
     const switchboardDir = join(cwd, '.switchboard');
     const mcpsDir = join(switchboardDir, 'mcps');
     const backupsDir = join(switchboardDir, 'backups');
@@ -268,15 +269,38 @@ export async function initSwitchboard(cwd) {
     const rootConfigPath = join(cwd, '.mcp.json');
     // Check if .switchboard already exists
     if (existsSync(switchboardDir)) {
-        console.log('✅ .switchboard directory already exists');
+        console.log('.switchboard directory already exists');
         return;
     }
     try {
-        // Load standard descriptions
-        const standardDescs = await getStandardDescriptions();
+        // Load library descriptions
+        const libraryDescs = await getLibraryDescriptions();
         // Discover existing .mcp.json
         const existingConfig = await discoverExistingMcp(cwd);
-        // Create directory structure (including backups dir)
+        // Prompt for mode BEFORE creating any directories
+        let useClaudeMode = false;
+        if (existingConfig && (existingConfig.mcps || existingConfig.mcpServers)) {
+            console.log('Choose your Switchboard mode:\n');
+            console.log('Switchboard Original:');
+            console.log('  Masks MCP tools until use to preserve context usage.');
+            console.log('  Good for retaining multiple connected MCPs through all conversations, for use when needed.');
+            console.log('  All MCP tools are replaced with one tool per MCP, so for example the context cost of');
+            console.log('  having Supabase MCP (20k tokens) enabled but not used is reduced to 500 tokens.');
+            console.log('  The tool context will be added to the conversation upon use.\n');
+            console.log('Switchboard Claudeception:');
+            console.log('  Introduces a Claude Code instance in front of every MCP.');
+            console.log('  Claudeception further reduces context usage by your parent Claude Code, allowing longer');
+            console.log('  conversations without the use of useless /compact, particularly relevant post Sonnet 4.5');
+            console.log('  which seems to eat context (NB turn off autocompact).');
+            console.log('  By firewalling large MCP responses (~10-15k tokens) to specialist instances and');
+            console.log('  replacing them with natural language summaries (~500 tokens) we keep the token cost');
+            console.log('  of MCP interactions to an absolute minimum.');
+            console.log('  Similar to Anthropic\'s own Custom Agents, but with the improvement of restricting');
+            console.log('  connected MCPs just to the custom agents (Claudeception instances).\n');
+            useClaudeMode = await promptYesNo('Use Switchboard Claudeception (y) or Switchboard Original (n)?', false);
+            console.log('');
+        }
+        // NOW create directory structure after user has confirmed
         await mkdirAsync(switchboardDir, { recursive: true });
         await mkdirAsync(mcpsDir, { recursive: true });
         await mkdirAsync(backupsDir, { recursive: true });
@@ -285,12 +309,12 @@ export async function initSwitchboard(cwd) {
             const backupPath = join(backupsDir, `mcp.json.backup.${Date.now()}`);
             const originalContent = await readFileAsync(rootConfigPath, 'utf8');
             await writeFileAsync(backupPath, originalContent);
-            console.log(`  ✓ Created backup: .switchboard/backups/${backupPath.split('/').pop()}`);
+            console.log(`  Created backup: .switchboard/backups/${backupPath.split('/').pop()}`);
         }
         // Copy existing MCPs if found
-        const { copiedMcps, standardDescriptions } = existingConfig
+        const { copiedMcps, libraryDescriptions } = existingConfig
             ? await copyExistingMcps(existingConfig, switchboardDir)
-            : { copiedMcps: [], standardDescriptions: [] };
+            : { copiedMcps: [], libraryDescriptions: [] };
         // If no existing MCPs, create example
         if (copiedMcps.length === 0) {
             const exampleMcpDir = join(mcpsDir, 'example-mcp');
@@ -299,84 +323,69 @@ export async function initSwitchboard(cwd) {
         }
         const discoveredMcps = await listMcpDirectories(mcpsDir);
         let claudeWrapped = [];
-        if (discoveredMcps.length > 0) {
-            console.log('Choose your Switchboard mode:\n');
-            console.log('  1.0 (Standard)  - Direct MCP tool access with structured schemas');
-            console.log('  2.0 (Claude)    - Natural language interface powered by Claude specialists\n');
-            const useClaudeMode = await promptYesNo('Use Switchboard 2.0 (Claude mode)?', false);
+        // Apply mode choice
+        if (discoveredMcps.length > 0 && useClaudeMode) {
+            console.log('Initializing Switchboard Claudeception...\n');
+            claudeWrapped = await enableClaudeMode(mcpsDir, discoveredMcps);
             console.log('');
-            if (useClaudeMode) {
-                console.log('🤖 Initializing Switchboard 2.0 (Claude mode)...\n');
-                claudeWrapped = await enableClaudeMode(mcpsDir, discoveredMcps);
-                if (claudeWrapped.length > 0) {
-                    console.log(`✅ Claude-powered wrappers created for: ${claudeWrapped.join(', ')}`);
-                    console.log("   Each tool now has a 'converse' subtool for natural language queries.");
-                }
-                else {
-                    console.log('ℹ️ Switchboard 2.0 requested, but no MCP configs were available to wrap.');
-                }
-                console.log('');
-            }
-            else {
-                console.log('📦 Using Switchboard 1.0 (Standard mode) - direct tool access.');
-                console.log('');
-            }
         }
-        console.log('🎯 Switchboard initialized successfully!');
+        else if (discoveredMcps.length > 0) {
+            console.log('Using Switchboard Original - direct tool access.');
+            console.log('');
+        }
+        console.log('Switchboard initialized successfully!');
         console.log('');
         if (copiedMcps.length > 0) {
-            console.log(`Found and migrated ${copiedMcps.length} existing MCPs:`);
+            console.log(`Migrated ${copiedMcps.length} MCPs:`);
             for (const mcpName of copiedMcps) {
-                const hasStandard = standardDescriptions.includes(mcpName);
-                const icon = hasStandard ? '✨' : '📦';
-                const suffix = hasStandard ? ' (standard description applied)' : '';
-                console.log(`  ${icon} ${mcpName} → .switchboard/mcps/${mcpName}/.mcp.json${suffix}`);
+                const hasLibraryDesc = libraryDescriptions.includes(mcpName);
+                const suffix = hasLibraryDesc ? ' (library description applied)' : ' (no library description found, you should add one)';
+                console.log(`  • ${mcpName}${suffix}`);
             }
             console.log('');
-            if (standardDescriptions.length > 0) {
-                console.log(`✨ Applied standard descriptions for: ${standardDescriptions.join(', ')}`);
-                console.log('');
-            }
         }
-        console.log('Created:');
         if (copiedMcps.length === 0) {
-            console.log('  📁 .switchboard/mcps/example-mcp/.mcp.json  (template MCP config)');
+            console.log('Created:');
+            console.log('  • .switchboard/mcps/example-mcp/.mcp.json  (template MCP config)');
+            console.log('');
         }
-        if (claudeWrapped.length > 0) {
-            console.log(`  🤖 Switchboard 2.0 wrappers + archived originals for: ${claudeWrapped.join(', ')}`);
-        }
-        // Write the new .mcp.json configuration
+        // Write the new .mcp.json configuration (both modes)
         const newConfigContent = generateTopLevelMcpTemplate(existingConfig);
         await writeFileAsync(rootConfigPath, newConfigContent);
-        console.log(`  ✓ Updated root .mcp.json to use Switchboard`);
+        console.log(`  ✅ Updated root .mcp.json to use Switchboard`);
         console.log('');
         console.log('Next steps:');
         let stepNumber = 1;
-        if (copiedMcps.length > 0) {
-            const needsEditing = copiedMcps.filter((name) => !standardDescriptions.includes(name));
-            if (needsEditing.length > 0) {
-                console.log(`  ${stepNumber++}. Edit the "switchboardDescription" field for these MCPs: ${needsEditing.join(', ')}`);
-                console.log('     (these need custom one-line descriptions for the LLM)');
+        if (claudeWrapped.length > 0) {
+            // Claudeception mode
+            console.log(`  ${stepNumber++}. Update your CLAUDE.md to use 'converse' subtool with {"query"} string`);
+            console.log(`  ${stepNumber++}. Review/refine Claudeception system prompts (.switchboard/mcps/*/CLAUDE.md)`);
+            if (copiedMcps.length > 0) {
+                const needsEditing = copiedMcps.filter((name) => !libraryDescriptions.includes(name));
+                if (needsEditing.length > 0) {
+                    console.log(`      (Especially: ${needsEditing.join(', ')} - no library descriptions found)`);
+                }
             }
         }
         else {
-            console.log(`  ${stepNumber++}. Copy your existing MCPs to .switchboard/mcps/[mcp-name]/.mcp.json`);
-            console.log(`  ${stepNumber++}. Edit the "switchboardDescription" field in each .mcp.json file`);
+            // Original mode
+            if (copiedMcps.length > 0) {
+                const needsEditing = copiedMcps.filter((name) => !libraryDescriptions.includes(name));
+                if (needsEditing.length > 0) {
+                    console.log(`  ${stepNumber++}. Edit the "switchboardDescription" field for: ${needsEditing.join(', ')}`);
+                    console.log('     (these need custom one-line descriptions for the LLM)');
+                }
+            }
+            else {
+                console.log(`  ${stepNumber++}. Copy your existing MCPs to .switchboard/mcps/[mcp-name]/.mcp.json`);
+                console.log(`  ${stepNumber++}. Edit the "switchboardDescription" field in each .mcp.json file`);
+            }
         }
-        if (claudeWrapped.length > 0) {
-            console.log('');
-            console.log('  ℹ️ Switchboard 2.0 (Claude mode) notes:');
-            console.log("     • Call the 'converse' subtool with a {\"query\"} string for natural language queries");
-            console.log('     • Specialists use Sonnet 4.5 by default (configurable with --model flag)');
-            console.log('     • Multi-turn conversations supported with automatic session management');
-            console.log('     • Original MCP configs preserved in original/.mcp.json');
-        }
-        console.log('');
         console.log(`  ${stepNumber}. Restart your MCP host (Claude Code, etc.) to load Switchboard`);
         console.log('');
     }
     catch (error) {
-        console.error('❌ Failed to initialize Switchboard:', error.message);
+        console.error('Failed to initialize Switchboard:', error.message);
         process.exit(1);
     }
 }

@@ -1,3 +1,14 @@
+/**
+ * @module core/router
+ * @description Suite tool routing and MCP call handling. Transforms child MCP tools into
+ * lazy-loaded suite tools (one suite per MCP), handling introspection requests and forwarding
+ * tool calls to the appropriate child client.
+ *
+ * @see {@link ../../docs/architecture.md} - System architecture and data flow
+ * @see {@link ../../docs/mcp-protocol-lessons.md} - Protocol implementation details
+ * @see {@link ../../docs/mcp-best-practices.md#lazy-loading} - Lazy loading patterns
+ */
+
 import { Config } from './config.js';
 import { discover } from './registry.js';
 import { ChildClient, ClaudeChildClient } from './child.js';

@@ -1,3 +1,12 @@
+/**
+ * @module cli/add
+ * @description Adds a new MCP to Switchboard configuration. Supports interactive mode,
+ * library description lookup, and optional Claude Mode wrapping (--claude flag).
+ *
+ * @see {@link ../../docs/architecture.md#adding-mcps} - Add MCP flow
+ * @see {@link ../../docs/claude-mode-guide.md} - Claude Mode wrapping
+ */
+
 import { existsSync, readFile, writeFile, mkdir } from 'fs';
 import { join } from 'path';
 import { promisify } from 'util';

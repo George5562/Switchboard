@@ -1,3 +1,11 @@
+/**
+ * @module cli/revert
+ * @description Reverts Switchboard initialization. Restores original .mcp.json from backup,
+ * removes wrapper scripts, and cleans up .switchboard directory.
+ *
+ * @see {@link ../../docs/troubleshooting-guide.md#reverting-configuration} - Revert process
+ */
+
 import { existsSync, readFile, writeFile, rename, rmdir, unlink } from 'fs';
 import { readdir } from 'fs/promises';
 import { join, basename } from 'path';

@@ -1,4 +1,15 @@
 import { spawn } from 'child_process';
+/**
+ * Client for communicating with child MCP processes via stdio.
+ *
+ * Message Protocol:
+ * - OUTGOING (requests): Always newline-delimited JSON (MCP SDK standard)
+ * - INCOMING (responses): Supports both Content-Length framing and newline-delimited JSON
+ *
+ * This dual-format support ensures compatibility with all MCP implementations:
+ * - MCPs built with @modelcontextprotocol/sdk use newline-delimited
+ * - Some custom MCPs may use Content-Length framing
+ */
 export class ChildClient {
     meta;
     rpcTimeoutMs;
@@ -56,13 +67,17 @@ export class ChildClient {
             await this.initialize();
         }
     }
+    /**
+     * Process incoming data buffer, handling both Content-Length and newline-delimited formats.
+     * This flexible parsing allows Switchboard to work with any MCP implementation.
+     */
     processBuffer() {
         while (true) {
             // Check if we have Content-Length framing (look ahead without consuming)
             const bufferStart = this.buffer.toString('utf8', 0, Math.min(20, this.buffer.length));
             const hasContentLength = /Content-Length:/i.test(bufferStart);
             if (hasContentLength) {
-                // Use Content-Length framing
+                // Parse Content-Length framed message
                 if (this.contentLength < 0) {
                     const sep = this.buffer.indexOf('\r\n\r\n');
                     if (sep < 0)
@@ -141,17 +156,9 @@ export class ChildClient {
                 reject(new Error(`RPC timeout for ${method}`));
             }, this.rpcTimeoutMs);
             this.pending.set(id, { resolve, reject, timer });
-            // Detect wrapper MCPs by checking if the command args contain "-claude-wrapper"
-            const isWrapper = this.meta.command?.args?.some(arg => arg.includes('-claude-wrapper'));
-            if (isWrapper) {
-                // Wrappers use MCP SDK's StdioServerTransport which expects newline-delimited JSON
-                this.process.stdin.write(json + '\n');
-            }
-            else {
-                // Standard MCPs may use Content-Length framing
-                const msg = `Content-Length: ${Buffer.byteLength(json)}\r\n\r\n${json}`;
-                this.process.stdin.write(msg);
-            }
+            // MCP SDK's StdioServerTransport expects newline-delimited JSON for requests
+            // (responses can use either Content-Length or newline-delimited, which we handle in processBuffer)
+            this.process.stdin.write(json + '\n');
         });
     }
     async initialize() {

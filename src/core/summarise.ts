@@ -1,3 +1,11 @@
+/**
+ * @module core/summarise
+ * @description Tool description truncation utility. Intelligently truncates long tool descriptions
+ * at word boundaries to fit within token limits while preserving readability.
+ *
+ * @see {@link ../../docs/architecture.md#description-summarization} - Summarization strategy
+ */
+
 export function summarise(description: string | undefined, maxChars: number = 160): string {
   if (!description) {
     return '';
