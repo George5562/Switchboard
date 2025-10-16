@@ -1,3 +1,10 @@
+---
+related_code:
+  - src/cli/init.ts
+  - src/cli/add.ts
+tags: [plugin, distribution, future, claude-code-plugins]
+---
+
 # Claude Code Plugin Integration
 
 **Status:** Analysis complete, not yet implemented

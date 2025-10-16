@@ -99,7 +99,7 @@ Context7 Documentation MCP Server running on stdio
 
 The child uses **line-delimited JSON** (no Content-Length header).
 
-**Solution:** Ensure `child.ts:processBuffer()` handles both protocols (should be implemented in current version).
+**Solution:** Ensure [child.ts](../src/core/child.ts#L93-L148) `processBuffer()` handles both protocols (should be implemented in current version).
 
 #### C. Missing Environment Variables
 
@@ -121,7 +121,7 @@ The child uses **line-delimited JSON** (no Content-Length header).
 }
 ```
 
-Ensure `child.ts` passes env:
+Ensure [child.ts](../src/core/child.ts#L46-L50) passes env:
 
 ```typescript
 spawn(cmd, args, {
@@ -174,7 +174,7 @@ If result looks like:
 
 ### Solution
 
-Ensure `router.ts:139-143` includes inputSchema:
+Ensure [router.ts](../src/core/router.ts#L139-L143) includes inputSchema:
 
 ```typescript
 return {

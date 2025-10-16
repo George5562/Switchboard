@@ -4,6 +4,16 @@ Comprehensive documentation for the Switchboard MCP proxy, including architectur
 
 ---
 
+## 🔗 Documentation-Code Linking
+
+**All code files now link to relevant documentation via JSDoc `@see` tags, and all documentation files list related code in YAML frontmatter.**
+
+- **For developers**: Cmd/Ctrl+Click on `{@link}` paths in VSCode to jump to docs
+- **For Claude**: Automatic context awareness when viewing code files
+- **Status**: [Complete ✅](./CODE_DOC_LINKING_COMPLETE.md) - See implementation details
+
+---
+
 ## 📚 Documentation Index
 
 ### [Plugin Integration Analysis](./plugin-integration.md) (NEW - future considerations)

@@ -71,7 +71,7 @@ Content-Length: 123\r\n\r\n
 
 ⚠️ **CRITICAL**: While responses can vary in format, **requests MUST always use newline-delimited JSON** (`json + '\n'`). This is the format expected by `@modelcontextprotocol/sdk`. Using Content-Length framing for requests breaks compatibility with most MCPs.
 
-**Implementation:**
+**Implementation:** (See [child.ts](../src/core/child.ts))
 
 ```typescript
 // SENDING (Outgoing requests) - Always newline-delimited
@@ -225,6 +225,8 @@ return {
 **Result:** Host sees tools but doesn't know how to call them.
 
 ### Fixed Implementation
+
+See [router.ts](../src/core/router.ts#L139-L144)
 
 ```typescript
 // router.ts

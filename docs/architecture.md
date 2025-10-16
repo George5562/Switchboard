@@ -58,7 +58,7 @@ Switchboard is a **proxy MCP (Model Context Protocol) server** that aggregates m
 
 ## Component Responsibilities
 
-### 1. `index.ts` - Server Entry Point
+### 1. [index.ts](../src/index.ts) - Server Entry Point
 
 **Purpose:** Initialize the MCP server using the official SDK and register suite tools.
 
@@ -97,7 +97,7 @@ async (args, extra) => {
 
 ---
 
-### 2. `core/config.ts` - Configuration Management
+### 2. [core/config.ts](../src/core/config.ts) - Configuration Management
 
 **Purpose:** Load and validate user configuration from `switchboard.config.json`.
 
@@ -147,7 +147,7 @@ async (args, extra) => {
 
 ---
 
-### 3. `core/registry.ts` - Child MCP Discovery
+### 3. [core/registry.ts](../src/core/registry.ts) - Child MCP Discovery
 
 **Purpose:** Discover child MCPs by finding `.mcp.json` files and extract metadata.
 
@@ -203,7 +203,7 @@ interface ChildMeta {
 
 ---
 
-### 4. `core/router.ts` - Suite Tool Logic
+### 4. [core/router.ts](../src/core/router.ts) - Suite Tool Logic
 
 **Purpose:** Handle suite tool calls (`introspect` and `call` actions) and forward to child MCPs.
 
@@ -284,7 +284,7 @@ return result
 
 ---
 
-### 5. `core/child.ts` - Child MCP Client
+### 5. [core/child.ts](../src/core/child.ts) - Child MCP Client
 
 **Purpose:** Manage a single child MCP process and handle JSON-RPC communication over stdio.
 
@@ -391,7 +391,7 @@ class ChildClient {
 
 ---
 
-### 6. `core/summarise.ts` - Description Truncation
+### 6. [core/summarise.ts](../src/core/summarise.ts) - Description Truncation
 
 **Purpose:** Shorten tool descriptions to reduce token usage while preserving meaning.
 
