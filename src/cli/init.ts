@@ -361,21 +361,13 @@ export async function initSwitchboard(cwd: string): Promise<void> {
     if (existingConfig && (existingConfig.mcps || existingConfig.mcpServers)) {
       console.log('Choose your Switchboard mode:\n');
       console.log('Switchboard Original:');
-      console.log('  Masks MCP tools until use to preserve context usage.');
-      console.log('  Good for retaining multiple connected MCPs through all conversations, for use when needed.');
-      console.log('  All MCP tools are replaced with one tool per MCP, so for example the context cost of');
-      console.log('  having Supabase MCP (20k tokens) enabled but not used is reduced to 500 tokens.');
-      console.log('  The tool context will be added to the conversation upon use.\n');
+      console.log('  Direct MCP proxy with structured tool calls (introspect/call actions).');
+      console.log('  85-90% token reduction. No dependencies.\n');
       console.log('Switchboard Claudeception:');
-      console.log('  Introduces a Claude Code instance in front of every MCP.');
-      console.log('  Claudeception further reduces context usage by your parent Claude Code, allowing longer');
-      console.log('  conversations without the use of useless /compact, particularly relevant post Sonnet 4.5');
-      console.log('  which seems to eat context (NB turn off autocompact).');
-      console.log('  By firewalling large MCP responses (~10-15k tokens) to specialist instances and');
-      console.log('  replacing them with natural language summaries (~500 tokens) we keep the token cost');
-      console.log('  of MCP interactions to an absolute minimum.');
-      console.log('  Similar to Anthropic\'s own Custom Agents, but with the improvement of restricting');
-      console.log('  connected MCPs just to the custom agents (Claudeception instances).\n');
+      console.log('  Natural language interface with specialist Claude instances (Haiku 4.5).');
+      console.log('  Context firewall for large MCP responses. Requires Claude Code installed.');
+      console.log('  Dependencies: npm install zod @modelcontextprotocol/sdk\n');
+      console.log('For details, see: https://github.com/George5562/Switchboard#readme\n');
 
       useClaudeMode = await promptYesNo(
         'Use Switchboard Claudeception (y) or Switchboard Original (n)?',

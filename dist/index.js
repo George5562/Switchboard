@@ -13969,7 +13969,8 @@ async function discover(globs) {
         switchboardDescription: config.switchboardDescription,
         type: config.type || "stdio",
         cwd: dirname(resolve(file)),
-        command: config.command
+        command: config.command,
+        rpcTimeoutMs: config.rpcTimeoutMs
       };
       registry[config.name] = meta;
     } catch (error) {
@@ -14107,7 +14108,11 @@ var ChildClient = class {
     return new Promise((resolve2, reject) => {
       const timer = setTimeout(() => {
         this.pending.delete(id);
-        reject(new Error(`RPC timeout for ${method}`));
+        reject(
+          new Error(
+            `RPC timeout for ${method} after ${this.rpcTimeoutMs}ms. To increase the timeout for ${this.meta.name}, add "rpcTimeoutMs": <milliseconds> to its .mcp.json file (e.g., 120000 for 2 minutes).`
+          )
+        );
       }, this.rpcTimeoutMs);
       this.pending.set(id, { resolve: resolve2, reject, timer });
       this.process.stdin.write(json + "\n");
@@ -14298,11 +14303,12 @@ async function handleSuiteCall(toolName, params, config) {
   if (action === "introspect") {
     let client = childClients.get(childName);
     if (!client) {
+      const rpcTimeoutMs = meta.rpcTimeoutMs ?? config.timeouts.rpcMs;
       if (meta.type === "claude-server") {
         const idleTimeoutMs = Number(process.env.SWITCHBOARD_CHILD_IDLE_MS || 3e5);
-        client = new ClaudeChildClient(meta, config.timeouts.rpcMs, idleTimeoutMs);
+        client = new ClaudeChildClient(meta, rpcTimeoutMs, idleTimeoutMs);
       } else {
-        client = new ChildClient(meta, config.timeouts.rpcMs);
+        client = new ChildClient(meta, rpcTimeoutMs);
       }
       childClients.set(childName, client);
     }
@@ -14325,11 +14331,12 @@ async function handleSuiteCall(toolName, params, config) {
     }
     let client = childClients.get(childName);
     if (!client) {
+      const rpcTimeoutMs = meta.rpcTimeoutMs ?? config.timeouts.rpcMs;
       if (meta.type === "claude-server") {
         const idleTimeoutMs = Number(process.env.SWITCHBOARD_CHILD_IDLE_MS || 3e5);
-        client = new ClaudeChildClient(meta, config.timeouts.rpcMs, idleTimeoutMs);
+        client = new ClaudeChildClient(meta, rpcTimeoutMs, idleTimeoutMs);
       } else {
-        client = new ChildClient(meta, config.timeouts.rpcMs);
+        client = new ChildClient(meta, rpcTimeoutMs);
       }
       childClients.set(childName, client);
     }
@@ -14412,7 +14419,7 @@ async function conversWithClaudeCode(query, context, cwd, mcpConfigPath) {
   return new Promise((resolve, reject) => {
     const args = [
       '--print',
-      '--model', 'sonnet', // Use Sonnet 4.5 by default (not Opus)
+      '--model', 'haiku', // Use Haiku 4.5 for cost efficiency and speed
       '--mcp-config', mcpConfigPath,
       '--dangerously-skip-permissions',
       '--output-format', 'json', // Use JSON to extract session ID
@@ -14913,21 +14920,13 @@ async function initSwitchboard(cwd) {
     if (existingConfig && (existingConfig.mcps || existingConfig.mcpServers)) {
       console.log("Choose your Switchboard mode:\n");
       console.log("Switchboard Original:");
-      console.log("  Masks MCP tools until use to preserve context usage.");
-      console.log("  Good for retaining multiple connected MCPs through all conversations, for use when needed.");
-      console.log("  All MCP tools are replaced with one tool per MCP, so for example the context cost of");
-      console.log("  having Supabase MCP (20k tokens) enabled but not used is reduced to 500 tokens.");
-      console.log("  The tool context will be added to the conversation upon use.\n");
+      console.log("  Direct MCP proxy with structured tool calls (introspect/call actions).");
+      console.log("  85-90% token reduction. No dependencies.\n");
       console.log("Switchboard Claudeception:");
-      console.log("  Introduces a Claude Code instance in front of every MCP.");
-      console.log("  Claudeception further reduces context usage by your parent Claude Code, allowing longer");
-      console.log("  conversations without the use of useless /compact, particularly relevant post Sonnet 4.5");
-      console.log("  which seems to eat context (NB turn off autocompact).");
-      console.log("  By firewalling large MCP responses (~10-15k tokens) to specialist instances and");
-      console.log("  replacing them with natural language summaries (~500 tokens) we keep the token cost");
-      console.log("  of MCP interactions to an absolute minimum.");
-      console.log("  Similar to Anthropic's own Custom Agents, but with the improvement of restricting");
-      console.log("  connected MCPs just to the custom agents (Claudeception instances).\n");
+      console.log("  Natural language interface with specialist Claude instances (Haiku 4.5).");
+      console.log("  Context firewall for large MCP responses. Requires Claude Code installed.");
+      console.log("  Dependencies: npm install zod @modelcontextprotocol/sdk\n");
+      console.log("For details, see: https://github.com/George5562/Switchboard#readme\n");
       useClaudeMode = await promptYesNo(
         "Use Switchboard Claudeception (y) or Switchboard Original (n)?",
         false

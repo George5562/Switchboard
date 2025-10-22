@@ -64,7 +64,7 @@ async function conversWithClaudeCode(query, context, cwd, mcpConfigPath) {
   return new Promise((resolve, reject) => {
     const args = [
       '--print',
-      '--model', 'sonnet', // Use Sonnet 4.5 by default (not Opus)
+      '--model', 'haiku', // Use Haiku 4.5 for cost efficiency and speed
       '--mcp-config', mcpConfigPath,
       '--dangerously-skip-permissions',
       '--output-format', 'json', // Use JSON to extract session ID
