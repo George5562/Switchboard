@@ -3,308 +3,129 @@
 [![npm version](https://img.shields.io/npm/v/@george5562/switchboard)](https://www.npmjs.com/package/@george5562/switchboard)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org/)
 
-MCP proxy that aggregates multiple child MCPs into suite tools with lazy subtool expansion. Presents one tool per MCP to the host, revealing subtools on demand.
+**Stop drowning in AI tool clutter.** Switchboard bundles all your AI tools into neat little packages, so Claude Code's workspace stays clean and fast. Instead of seeing hundreds of individual tools, you see one package per tool suite.
 
-**Token reduction: 85-90%**. Memory MCP: 5,913 → 634 tokens (89%). Large MCPs like Supabase save 20,000+ tokens.
+**Save 85-90% of your context window** - that's like getting 10x more room to work.
 
 ---
 
-## Quick Start
+## Install It
 
 ```bash
 npm install -g @george5562/switchboard
 cd your-project
 switchboard init
-# Restart your MCP host (Claude Code, Cursor, etc.)
+# Restart Claude Code (or whatever you're using)
 ```
 
-Migrates existing `.mcp.json` and creates `.switchboard/mcps/[name]/.mcp.json` for each MCP. Auto-populates descriptions for 50+ common MCPs.
+That's it. Switchboard finds your existing setup and tidies everything up automatically.
 
 ---
 
-## Two Operating Modes
+## Pick Your Flavor
 
-Choose one during `init`:
+When you run `switchboard init`, you'll choose between two modes:
 
-### Switchboard Original (Default)
+### Original Mode (Default)
 
-**Token-efficient MCP aggregation with structured tool calls.**
+**What it does:** Bundles your tools into organized packages. When you need something, you ask to see what's in the package, then pick what you want.
 
-- One suite tool per MCP presented to host
-- Host calls `introspect` action to see available subtools
-- Host calls `call` action with specific subtool name and args
-- Direct MCP communication, no intermediary
+**Best for:** Most people. It's simple, fast, and keeps things tidy.
 
-**Token Savings Example:**
+**Why use it:** You have multiple tool suites connected and want them all ready to go without cluttering your workspace.
 
-![Context usage before Switchboard](images/context-before-switchboard-original.png)
-*Before: 23.6k tokens for 3 MCPs (context7, memory, supabase)*
-
-![Context usage after Switchboard Original](images/context-after-switchboard-original.png)
-*After Switchboard Original: 3.2k tokens (86% reduction)*
-
-**Best for:** Keeping multiple MCPs connected and available when you're not sure which one you'll need.
-
-**Usage:**
 ```bash
 switchboard init
-# Choose "N" when prompted for Claudeception mode
-```
-
-**Example flow:**
-```
-Host → memory_suite.introspect → [create_entities, search_nodes, ...]
-Host → memory_suite.call(subtool: "create_entities", args: {...})
+# Choose "N" for normal mode
 ```
 
 ---
 
-### Switchboard Claudeception
+### Claudeception Mode
 
-**Natural language interface powered by specialist Claude Code agents with multi-turn conversation support.**
+**What it does:** Gives each tool suite its own personal Claude assistant. You talk to them in plain English, they handle the technical stuff, and give you back just the important bits.
 
-**How it works:**
-```
-Master Claude Code (your session)
-    ↓ "store a note saying hello"
-Switchboard Wrapper (persists)
-    ↓ spawns/resumes: claude --print --mcp-config .mcp.json
-Specialist Claude Code (session-aware)
-    ↓ uses structured MCP tools
-Real MCP (memory, filesystem, etc.)
-```
+**The magic:** Some tools spit out massive responses (think: database queries with thousands of rows). Claudeception catches that avalanche and hands you a neat summary instead. Your main workspace stays clean.
 
-Each MCP gets a dedicated specialist Claude that:
-- Interprets natural language queries
-- Calls the appropriate MCP tools
-- Remembers context across multiple calls
-- Returns results in plain English
+**Best for:** Tools that return lots of data (databases, web scrapers, file systems).
 
-**Context Firewall Advantage:**
+**The catch:** You need Claude Code installed on your machine. But the cool part? You're already using your existing subscription - no extra API keys needed.
 
-Many MCPs return massive responses that consume tokens unnecessarily:
-- Supabase responses: Often 10,000-15,000 tokens per query result
-- File system operations: Large file contents or directory listings
-- Database operations: Full result sets with metadata
-
-![Supabase MCP returning 16k tokens](images/supabasemcp-16k-example.png.png)
-*Example: Supabase query response consuming 16,000+ tokens - Claudeception firewalls this and summarizes to ~500 tokens*
-
-Claudeception **firewalls this context wastage** to the specialist instance, replacing it with a concise natural language summary (typically ~500 tokens). Your main Claude Code session only sees the essential information, not the raw MCP response.
-
-**Best for:** MCPs that return large amounts of context (supabase, playwright)
-
-**Requirements:**
-- Claude Code installed (`claude` command in PATH)
-- Claude Code subscription (no API key needed!)
-- **Dependencies**: `npm install zod @modelcontextprotocol/sdk` in project root (CLI will show exact command)
-
-**Usage:**
 ```bash
 switchboard init
-# Choose "y" when prompted for Claudeception mode
-
-# Install wrapper dependencies (required!)
-npm install zod @modelcontextprotocol/sdk
+# Choose "y" for Claudeception
+# Then run: npm install zod @modelcontextprotocol/sdk
 ```
 
-**Example flow (with context memory):**
+**Example conversation:**
 ```
-Master Claude → memory_converse(query: "store a note saying hello")
-    → Specialist creates note, session starts
-Master Claude → memory_converse(query: "what note did I just store?")
-    → Specialist remembers: "The note saying 'hello'"
+You: "Store a note saying hello"
+Memory assistant: "Done. Saved your note."
+
+You: "What note did I just save?"
+Memory assistant: "The one that says 'hello'"
 ```
 
-**Configuration:**
-
-| Variable | Purpose | Default |
-| --- | --- | --- |
-| `SWITCHBOARD_SESSION_IDLE_MS` | Session idle timeout | 300000 (5 min) |
-| `SWITCHBOARD_INTELLIGENT_IDLE_MS` | Wrapper idle timeout | 600000 (10 min) |
-| `SWITCHBOARD_CONVERSATION_TIMEOUT_MS` | Per-query timeout | 120000 (2 min) |
-
-**Important:** Once you choose a mode during `init`, all MCPs use that mode. To switch modes, run `switchboard revert` then `switchboard init` again.
-
-**Full Guide:** [docs/claude-mode-guide.md](./docs/claude-mode-guide.md)
+Each assistant remembers your conversation, so you can have back-and-forth chats.
 
 ---
 
-## CLI Commands
+## How to Use It
 
-### `switchboard init`
+### With Original Mode
 
-Initialize Switchboard in your project:
-- Creates `.switchboard/` directory structure
-- Migrates existing MCPs from `.mcp.json`
-- Auto-populates descriptions for 50+ common MCPs
-- Automatically updates your `.mcp.json` to use Switchboard
-- Creates timestamped backup in `.switchboard/backups/`
+Your tools look like `memory_suite`, `supabase_suite`, etc.
+
+**Want to see what's inside?** Ask Claude Code to introspect the suite.
+
+**Want to use something specific?** Just tell Claude Code what you want to do - it'll handle calling the right tool.
+
+### With Claudeception Mode
+
+Your tools have the same names, but you just talk to them normally.
+
+**Example:** "Hey memory, count how many notes I have" or "Supabase, show me the users table"
+
+The assistant handles the details and gives you a clean answer.
+
+---
+
+## Adding More Tools
+
+Already set up Switchboard? Add more tools easily:
 
 ```bash
-switchboard init
-# Prompts for Claudeception mode (y/N)
+switchboard add filesystem
+switchboard add my-custom-tool node ./server.js
 ```
 
-### `switchboard add`
+They'll use whatever mode you picked during `init`.
 
-Add individual MCPs to an existing Switchboard setup. Uses the same mode as `init`.
+---
 
-```bash
-switchboard add <name>                              # Uses: npx <name>
-switchboard add <name> <command> [args...]          # Custom command
-switchboard add <name> --description "Description"  # With description
-```
+## Changed Your Mind?
 
-Examples:
-```bash
-switchboard add filesystem                           # Uses: npx filesystem
-switchboard add git-mcp node ./git-server.js        # Custom command
-switchboard add database -d "Database operations"    # With description
-```
-
-### `switchboard revert`
-
-Completely undo Switchboard initialization:
-- Restores original `.mcp.json` from backup
-- Removes Claudeception wrapper scripts
-- Deletes `.switchboard/` directory
+Want to switch modes or go back to how things were?
 
 ```bash
 switchboard revert
-# Then you can run `switchboard init` again with different choices
+# Then run init again with different choices
 ```
 
 ---
 
-## API Reference
+## Want More Details?
 
-Each suite tool accepts:
-
-```typescript
-{
-  action: "introspect" | "call",
-  subtool?: string,     // Required for "call"
-  args?: object         // Arguments for the subtool
-}
-```
-
-**Introspect** - Discover available subtools:
-
-```javascript
-{ action: 'introspect' }
-// Returns: [{ name: "click", summary: "Click element", inputSchema: {...} }, ...]
-```
-
-**Call** - Execute a specific subtool:
-
-```javascript
-{
-  action: "call",
-  subtool: "click",
-  args: { selector: "#button" }
-}
-// Returns: (result from child MCP)
-```
-
----
-
-## Configuration
-
-### Global Configuration (`switchboard.config.json`)
-
-Create a `switchboard.config.json` in your project root to customize Switchboard behavior:
-
-```json
-{
-  "discoverGlobs": [".switchboard/mcps/*/.mcp.json"],
-  "timeouts": {
-    "childSpawnMs": 8000,
-    "rpcMs": 60000
-  },
-  "introspection": {
-    "mode": "summary",
-    "summaryMaxChars": 160
-  }
-}
-```
-
-**Timeout Settings:**
-- `childSpawnMs`: Time to wait for child MCP process to start (default: 8000ms)
-- `rpcMs`: Default RPC timeout for all tool calls (default: 60000ms / 1 minute)
-
-### Per-MCP Configuration (`.switchboard/mcps/<name>/.mcp.json`)
-
-Override settings for specific MCPs by adding fields to their `.mcp.json`:
-
-```json
-{
-  "name": "supabase",
-  "type": "claude-server",
-  "command": {
-    "cmd": "node",
-    "args": ["supabase-claude-wrapper.mjs"]
-  },
-  "rpcTimeoutMs": 120000
-}
-```
-
-**Per-MCP Timeout Override:**
-- `rpcTimeoutMs`: RPC timeout for this specific MCP (overrides global `timeouts.rpcMs`)
-- Useful for MCPs with slow operations (database queries, large datasets, API calls)
-- Recommended values:
-  - File operations: 60000ms (default)
-  - Database queries: 120000ms (2 minutes)
-  - API calls: 90000ms (90 seconds)
-  - Search/indexing: 180000ms (3 minutes)
-
-**Example use case:** If you see `RPC timeout for tools/call` errors, the error message will tell you how to increase the timeout for that specific MCP.
-
----
-
-## Performance Benchmarks
-
-**Switchboard Original:**
-- **Token Reduction**:
-  - Memory MCP: 89% (5,913 → 634 tokens)
-  - Typical aggregate: 85-90% (1,820+ → 200-300 tokens)
-  - Large MCPs like Supabase: 95%+ (20,000+ → ~1,000 tokens)
-
-**Switchboard Claudeception:**
-- **Cold Start (Turn 1)**: 20.4s with 21k cache creation tokens
-- **Warm Resume (Turn 2+)**: Variable (task-dependent), with 88k-267k cache read tokens
-- **Session Overhead**: ~0ms (wrapper process persists, session state maintained in memory)
-
----
-
-## Documentation
-
-- [Claude Mode Complete Guide](./docs/claude-mode-guide.md) - Session management, CLAUDE.md customization, troubleshooting
-- [Session Examples](./docs/session-examples.md) - Multi-turn conversation examples with performance benchmarks
-- [Architecture](./docs/architecture.md) - System design and data flow
-- [Troubleshooting](./docs/troubleshooting-guide.md) - Solutions to common issues
-- [Full Documentation Index](./docs/README.md)
-
----
-
-## Roadmap
-
-### v0.2.0: Multi-Location Support
-
-Support `.cursor/.mcp.json`, `.gemini/.mcp.json`, and other IDE-specific locations.
-
-### v0.3.0: Intermediate Tier Grouping
-
-Group tools by functionality within large MCPs (60-80% further token reduction for MCPs with 50+ tools).
-
-### v0.4.0: Dynamic MCP Discovery
-
-On-demand MCP loading from a global registry with just-in-time installation.
+Check out the [full documentation](./docs/README.md) for:
+- Deep dive into how Claudeception works
+- Configuration options
+- Troubleshooting tips
+- Architecture details
 
 ---
 
 ## Links
 
-- **npm**: https://www.npmjs.com/package/@george5562/switchboard
-- **GitHub**: https://github.com/George5562/Switchboard
-- **Issues**: https://github.com/George5562/Switchboard/issues
+- **npm package:** https://www.npmjs.com/package/@george5562/switchboard
+- **GitHub:** https://github.com/George5562/Switchboard
+- **Issues/Questions:** https://github.com/George5562/Switchboard/issues
