@@ -127,12 +127,15 @@ export async function handleSuiteCall(toolName: string, params: any, config: Con
     // Get or create child client
     let client = childClients.get(childName);
     if (!client) {
+      // Use per-MCP timeout if configured, otherwise use global timeout
+      const rpcTimeoutMs = meta.rpcTimeoutMs ?? config.timeouts.rpcMs;
+
       // Use ClaudeChildClient for claude-server types
       if (meta.type === 'claude-server') {
         const idleTimeoutMs = Number(process.env.SWITCHBOARD_CHILD_IDLE_MS || 300000);
-        client = new ClaudeChildClient(meta, config.timeouts.rpcMs, idleTimeoutMs);
+        client = new ClaudeChildClient(meta, rpcTimeoutMs, idleTimeoutMs);
       } else {
-        client = new ChildClient(meta, config.timeouts.rpcMs);
+        client = new ChildClient(meta, rpcTimeoutMs);
       }
       childClients.set(childName, client);
     }
@@ -167,12 +170,15 @@ export async function handleSuiteCall(toolName: string, params: any, config: Con
     // Get or create child client
     let client = childClients.get(childName);
     if (!client) {
+      // Use per-MCP timeout if configured, otherwise use global timeout
+      const rpcTimeoutMs = meta.rpcTimeoutMs ?? config.timeouts.rpcMs;
+
       // Use ClaudeChildClient for claude-server types
       if (meta.type === 'claude-server') {
         const idleTimeoutMs = Number(process.env.SWITCHBOARD_CHILD_IDLE_MS || 300000);
-        client = new ClaudeChildClient(meta, config.timeouts.rpcMs, idleTimeoutMs);
+        client = new ClaudeChildClient(meta, rpcTimeoutMs, idleTimeoutMs);
       } else {
-        client = new ChildClient(meta, config.timeouts.rpcMs);
+        client = new ChildClient(meta, rpcTimeoutMs);
       }
       childClients.set(childName, client);
     }

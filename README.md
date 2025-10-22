@@ -209,6 +209,59 @@ Each suite tool accepts:
 
 ---
 
+## Configuration
+
+### Global Configuration (`switchboard.config.json`)
+
+Create a `switchboard.config.json` in your project root to customize Switchboard behavior:
+
+```json
+{
+  "discoverGlobs": [".switchboard/mcps/*/.mcp.json"],
+  "timeouts": {
+    "childSpawnMs": 8000,
+    "rpcMs": 60000
+  },
+  "introspection": {
+    "mode": "summary",
+    "summaryMaxChars": 160
+  }
+}
+```
+
+**Timeout Settings:**
+- `childSpawnMs`: Time to wait for child MCP process to start (default: 8000ms)
+- `rpcMs`: Default RPC timeout for all tool calls (default: 60000ms / 1 minute)
+
+### Per-MCP Configuration (`.switchboard/mcps/<name>/.mcp.json`)
+
+Override settings for specific MCPs by adding fields to their `.mcp.json`:
+
+```json
+{
+  "name": "supabase",
+  "type": "claude-server",
+  "command": {
+    "cmd": "node",
+    "args": ["supabase-claude-wrapper.mjs"]
+  },
+  "rpcTimeoutMs": 120000
+}
+```
+
+**Per-MCP Timeout Override:**
+- `rpcTimeoutMs`: RPC timeout for this specific MCP (overrides global `timeouts.rpcMs`)
+- Useful for MCPs with slow operations (database queries, large datasets, API calls)
+- Recommended values:
+  - File operations: 60000ms (default)
+  - Database queries: 120000ms (2 minutes)
+  - API calls: 90000ms (90 seconds)
+  - Search/indexing: 180000ms (3 minutes)
+
+**Example use case:** If you see `RPC timeout for tools/call` errors, the error message will tell you how to increase the timeout for that specific MCP.
+
+---
+
 ## Performance Benchmarks
 
 **Switchboard Original:**

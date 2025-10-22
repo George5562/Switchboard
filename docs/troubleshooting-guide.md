@@ -131,7 +131,93 @@ spawn(cmd, args, {
 
 ---
 
-## 2. Host Can't Determine Required Parameters
+## 2. RPC Timeout for Tool Calls (tools/call)
+
+### Symptoms
+
+```
+Error: RPC timeout for tools/call after 60000ms. To increase the timeout for supabase, add "rpcTimeoutMs": <milliseconds> to its .mcp.json file (e.g., 120000 for 2 minutes).
+```
+
+This occurs when a tool call (like `converse` in Claude Mode or any direct subtool call) takes longer than the configured timeout.
+
+### Common Causes
+
+#### A. Slow Database Queries (Supabase, Postgres, etc.)
+
+**Problem:** Complex queries or large result sets take more than 60 seconds to process.
+
+**Solution - Per-MCP timeout:** Add `rpcTimeoutMs` to the specific MCP's `.mcp.json`:
+
+```json
+{
+  "name": "supabase",
+  "type": "claude-server",
+  "command": {
+    "cmd": "node",
+    "args": ["supabase-claude-wrapper.mjs"]
+  },
+  "rpcTimeoutMs": 120000
+}
+```
+
+**Solution - Global timeout:** Edit `switchboard.config.json` (affects all MCPs):
+
+```json
+{
+  "timeouts": {
+    "rpcMs": 120000
+  }
+}
+```
+
+#### B. Claude Mode Specialist Processing
+
+**Problem:** In Claude Mode, the specialist Claude agent needs time to:
+- Query the MCP
+- Process large responses
+- Summarize results back to natural language
+
+**Solution:** Use per-MCP timeout (recommended) for MCPs that commonly return large datasets:
+
+```json
+{
+  "name": "context7",
+  "type": "claude-server",
+  "rpcTimeoutMs": 180000
+}
+```
+
+#### C. First Call After Idle Timeout
+
+**Problem:** If the Claude Mode specialist has been idle for 5 minutes (default), the first call rebuilds session context.
+
+**Solution:** This is usually a one-time delay. If persistent, increase the timeout for that MCP.
+
+### Recommended Timeouts by MCP Type
+
+| MCP Type | Suggested Timeout | Reason |
+|----------|------------------|---------|
+| File operations | 60000ms (default) | Fast local operations |
+| Database queries | 120000ms (2 min) | Complex queries, large results |
+| API calls | 90000ms (90s) | Network latency + processing |
+| Search/indexing | 180000ms (3 min) | Large corpus searches |
+
+### Per-MCP vs Global Configuration
+
+**Per-MCP** (`rpcTimeoutMs` in `.mcp.json`):
+- ✅ Only affects the specific MCP
+- ✅ Recommended for MCPs with known slow operations
+- ✅ Example: `.switchboard/mcps/supabase/.mcp.json`
+
+**Global** (`timeouts.rpcMs` in `switchboard.config.json`):
+- ⚠️ Affects ALL MCPs
+- ⚠️ Can hide performance issues
+- Use only if most MCPs need longer timeouts
+
+---
+
+## 3. Host Can't Determine Required Parameters
 
 ### Symptoms
 
@@ -279,7 +365,7 @@ inputSchema present: ✅ YES
 
 ---
 
-## 3. Changes Not Taking Effect
+## 4. Changes Not Taking Effect
 
 ### Symptoms
 
@@ -330,7 +416,7 @@ node test_with_sdk.js  # Uses fresh process every time
 
 ---
 
-## 4. "Parameter Extraction Failed"
+## 5. "Parameter Extraction Failed"
 
 ### Symptoms
 
@@ -385,7 +471,7 @@ server.tool(name, description, toolSchema, async (args, extra) => {
 
 ---
 
-## 5. Buffer Processing Errors
+## 6. Buffer Processing Errors
 
 ### Symptoms
 
@@ -438,7 +524,7 @@ private processBuffer(): void {
 
 ---
 
-## 6. Child Process Never Spawns
+## 7. Child Process Never Spawns
 
 ### Symptoms
 
@@ -563,7 +649,7 @@ Testing spawn of ./dist/switchboard...
 
 ---
 
-## 7. Tool Not Found in Suite
+## 8. Tool Not Found in Suite
 
 ### Symptoms
 
@@ -620,7 +706,7 @@ console.log(Object.keys(registry));
 
 ---
 
-## 8. Test Scripts Timeout
+## 9. Test Scripts Timeout
 
 ### Symptoms
 

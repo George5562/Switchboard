@@ -1,0 +1,15 @@
+{
+  "name": "example-mcp",
+  "description": "Example MCP configuration",
+  "type": "stdio",
+  "command": {
+    "cmd": "npx",
+    "args": ["-y", "@example/mcp-server"],
+    "env": {
+      "API_KEY": "your-api-key-here"
+    }
+  },
+  "$comment": "Optional per-MCP RPC timeout override (in milliseconds)",
+  "rpcTimeoutMs": 120000,
+  "$comment2": "This overrides the global timeout for this specific MCP. Useful for MCPs with slow operations like database queries or large dataset processing."
+}

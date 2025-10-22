@@ -192,7 +192,13 @@ export class ChildClient {
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
         this.pending.delete(id);
-        reject(new Error(`RPC timeout for ${method}`));
+        reject(
+          new Error(
+            `RPC timeout for ${method} after ${this.rpcTimeoutMs}ms. ` +
+            `To increase the timeout for ${this.meta.name}, add "rpcTimeoutMs": <milliseconds> ` +
+            `to its .mcp.json file (e.g., 120000 for 2 minutes).`
+          )
+        );
       }, this.rpcTimeoutMs);
 
       this.pending.set(id, { resolve, reject, timer });

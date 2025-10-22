@@ -22,6 +22,7 @@ export interface ChildMeta {
     args?: string[];
     env?: Record<string, string>;
   };
+  rpcTimeoutMs?: number; // Per-MCP RPC timeout override (defaults to global config)
   cache?: any;
 }
 
@@ -52,6 +53,7 @@ export async function discover(globs: string[]): Promise<Record<string, ChildMet
         type: config.type || 'stdio',
         cwd: dirname(resolve(file)),
         command: config.command,
+        rpcTimeoutMs: config.rpcTimeoutMs,
       };
 
       registry[config.name] = meta;

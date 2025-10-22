@@ -7,5 +7,6 @@
   "introspection": {
     "mode": "summary",
     "summaryMaxChars": 160
-  }
+  },
+  "$comment": "Global timeout applies to all MCPs. For per-MCP timeouts, add 'rpcTimeoutMs' to the MCP's .mcp.json file (see example below)."
 }
