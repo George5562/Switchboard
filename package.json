@@ -1,6 +1,6 @@
 {
   "name": "@george5562/switchboard",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Stdio proxy MCP: one top-level tool per MCP, lazy subtool expansion.",
   "keywords": [
     "mcp",
